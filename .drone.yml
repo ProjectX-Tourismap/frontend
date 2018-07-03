@@ -10,7 +10,7 @@ pipeline:
     image: node:9-alpine
     commands:
     - npm install
-    - npm run generate
+    - npm run build
   rebuild-cache:
     image: drillster/drone-volume-cache
     rebuild: true
