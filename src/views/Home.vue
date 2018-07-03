@@ -1,35 +1,152 @@
 <template>
-  <v-container fluid>
-    <v-slide-y-transition mode="out-in">
-      <v-layout column align-center>
-        <img src="@/assets/logo.png" alt="Vuetify.js" class="mb-5">
-        <blockquote>
-          &#8220;First, solve the problem. Then, write the code.&#8221;
-          <footer>
-            <small>
-              <em>&mdash;John Johnson</em>
-            </small>
-          </footer>
-        </blockquote>
-      </v-layout>
-    </v-slide-y-transition>
+  <v-container>
+    <div v-if="showLoading" class="overlay">
+      <square-spin-loader color="white" size="80px"></square-spin-loader>
+    </div>
+
+    <div v-if="showMap">
+      <mgl-map
+              :accessToken="mapbox.token"
+              :mapStyle.sync="mapStyle"
+              :center="[initGeo.lng,initGeo.lat]" :zoom="14"
+              @load="loadMap"
+              class="map-view" ref="mapView">
+        <mgl-navigation-control position="top-right"/>
+
+        <mgl-marker :coordinates="[initGeo.lng,initGeo.lat]" color="blue" />
+
+        <mgl-marker v-for="entity in entities" :key="entity.id"
+                    anchor="top"
+                    :coordinates="[entity.geo.lng,entity.geo.lat]" color="red">
+          <mgl-popup :closeButton="false">
+            <v-card :flat="true">
+              <div>{{ entity.id }}</div>
+              <div>{{ entity.name }}</div>
+            </v-card>
+          </mgl-popup>
+        </mgl-marker>
+
+      </mgl-map>
+      <v-btn absolute :dark="light" fab bottom right
+             :color="(light ? 'black' : 'white')" @click="toggleLight" class="fab-btn">
+        <v-icon>{{ light?'cloud':'wb_sunny' }}</v-icon>
+      </v-btn>
+    </div>
   </v-container>
 </template>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
+<script>
+import { MglGeolocateControl, MglMap, MglMarker, MglNavigationControl, MglPopup } from 'vue-mapbox';
+
+export default {
+  components: {
+    MglMap,
+    MglGeolocateControl,
+    MglNavigationControl,
+    MglMarker,
+    MglPopup,
+  },
+  name: 'Home',
+  data() {
+    return {
+      mapbox: {
+        token: 'pk.eyJ1Ijoic3l1Y2hhbjEwMDUiLCJhIjoiY2pqMmdlNGkwMHd0aTNxcHF2ZTkwYXh0ZyJ9.Vz7brvQpAt3RbaJ0lqUEyQ',
+        style: {
+          day: 'mapbox://styles/syuchan1005/cjj2xeu8z2u7k2snbviv748qd',
+          night: 'mapbox://styles/syuchan1005/cjj3glju63c7j2sqj7lnpehm5',
+        },
+      },
+      initGeo: {
+        lat: undefined,
+        lng: undefined,
+      },
+      entities: [],
+      light: true,
+      showMap: false,
+      showLoading: true,
+    };
+  },
+  mounted() {
+    /*
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((geo) => {
+        this.setInitGeo(geo.coords.latitude, geo.coords.longitude);
+      }, () => {
+        this.setInitGeo();
+      });
+    } else {
+      this.setInitGeo();
+    }
+    */
+    this.setInitGeo();
+  },
+  computed: {
+    mapStyle() {
+      return this.light ? this.mapbox.style.day : this.mapbox.style.night;
+    },
+  },
+  watch: {
+    mapStyle() {
+      this.$refs.mapView.map.setStyle(this.mapStyle);
+    },
+  },
+  methods: {
+    setInitGeo(lat, lng) {
+      this.initGeo = {
+        lat: lat || 35.689138,
+        lng: lng || 139.700848,
+      };
+      this.showMap = true;
+    },
+    toggleLight() {
+      this.light = !this.light;
+    },
+    fetchEntities() {
+      this.$http({
+        method: 'get',
+        baseURL: 'https://backend.syuchan.work/',
+        url: '/api',
+        params: {
+          query: `{nearEntitiesInPoint(point:{lat:"${this.initGeo.lat}" lng:"${this.initGeo.lng}"} distance:4 limit:100){id name geo{lat lng}}}`,
+        },
+      }).then((response) => {
+        this.entities = response.data.data.nearEntitiesInPoint;
+      });
+    },
+    loadMap() {
+      this.showLoading = false;
+      this.fetchEntities();
+    },
+  },
+};
+</script>
+
 <style scoped>
-h1, h2 {
-  font-weight: normal;
-}
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
-}
+  button.fab-btn {
+    bottom: 16px;
+  }
+
+  .map-view {
+    width: 100%;
+    height: 100%;
+
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+
+  .overlay {
+    background: rgba(0, 0, 0, 0.5);
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 </style>
+
