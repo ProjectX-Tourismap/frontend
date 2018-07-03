@@ -67,7 +67,6 @@ export default {
     };
   },
   mounted() {
-    /*
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((geo) => {
         this.setInitGeo(geo.coords.latitude, geo.coords.longitude);
@@ -77,8 +76,6 @@ export default {
     } else {
       this.setInitGeo();
     }
-    */
-    this.setInitGeo();
   },
   computed: {
     mapStyle() {
@@ -104,7 +101,7 @@ export default {
     fetchEntities() {
       this.$http({
         method: 'get',
-        baseURL: 'https://backend.syuchan.work/',
+        baseURL: 'http://backend.syuchan.work/',
         url: '/api',
         params: {
           query: `{nearEntitiesInPoint(point:{lat:"${this.initGeo.lat}" lng:"${this.initGeo.lng}"} distance:4 limit:100){id name geo{lat lng}}}`,
