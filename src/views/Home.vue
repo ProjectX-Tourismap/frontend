@@ -17,7 +17,8 @@
 
         <mgl-marker v-for="entity in entities" :key="entity.id"
                     anchor="top"
-                    :coordinates="[entity.geo.lng,entity.geo.lat]" color="red">
+                    :coordinates="[entity.geo.lng,entity.geo.lat]"
+                    :color="colors[entity.category_id]">
           <mgl-popup :closeButton="false">
             <v-card :flat="true">
               <div>{{ entity.id }}</div>
@@ -60,7 +61,18 @@ export default {
         lat: undefined,
         lng: undefined,
       },
-      entities: [],
+      entities: [{
+        id: 1,
+        name: 'test',
+        category_id: 1,
+        geo: {
+          lat: 35.988138,
+          lng: 139.707848,
+        },
+        pref_id: 1,
+        city_id: 1,
+      }],
+      colors: ['blue', 'orange', 'green', 'yellow', 'red'],
       light: true,
       showMap: false,
       showLoading: true,
@@ -104,7 +116,7 @@ export default {
         baseURL: 'http://backend.syuchan.work/',
         url: '/api',
         params: {
-          query: `{nearEntitiesInPoint(point:{lat:"${this.initGeo.lat}" lng:"${this.initGeo.lng}"} distance:4 limit:100){id name geo{lat lng}}}`,
+          query: `{nearEntitiesInPoint(point:{lat:"${this.initGeo.lat}" lng:"${this.initGeo.lng}"} distance:4 limit:100){id name geo{lat lng} category_id}}`,
         },
       }).then((response) => {
         this.entities = response.data.data.nearEntitiesInPoint;
