@@ -1,19 +1,30 @@
 <template>
-  <v-container>
+  <div id="home">
     <div v-if="showLoading" class="overlay">
       <square-spin-loader color="white" size="80px"></square-spin-loader>
     </div>
 
-    <div v-if="showMap">
+    <div v-if="showMap" class="main">
+      <v-text-field class="searchBox" :class="{xs: $vuetify.breakpoint.xsOnly}"
+                    v-model="searchText"
+                    solo
+                    type="text"
+                    label="Search..."
+                    clearable
+                    append-icon="search"
+                    @click:append="clickSearchButton"
+      ></v-text-field>
+
       <mgl-map
               :accessToken="mapbox.token"
               :mapStyle.sync="mapStyle"
               :center="[initGeo.lng,initGeo.lat]" :zoom="14"
               @load="loadMap"
               class="map-view" ref="mapView">
+
         <mgl-navigation-control position="top-right"/>
 
-        <mgl-marker :coordinates="[initGeo.lng,initGeo.lat]" color="blue" />
+        <mgl-marker :coordinates="[initGeo.lng,initGeo.lat]" color="blue"/>
 
         <mgl-marker v-for="entity in entities" :key="entity.id"
                     anchor="top"
@@ -26,14 +37,14 @@
             </v-card>
           </mgl-popup>
         </mgl-marker>
-
       </mgl-map>
+
       <v-btn absolute :dark="light" fab bottom right
              :color="(light ? 'black' : 'white')" @click="toggleLight" class="fab-btn">
         <v-icon>{{ light?'cloud':'wb_sunny' }}</v-icon>
       </v-btn>
     </div>
-  </v-container>
+  </div>
 </template>
 
 <script>
@@ -76,6 +87,7 @@ export default {
       light: true,
       showMap: false,
       showLoading: true,
+      searchText: '',
     };
   },
   mounted() {
@@ -126,11 +138,19 @@ export default {
       this.showLoading = false;
       this.fetchEntities();
     },
+    clickSearchButton() {
+      console.log(this.searchText);
+    },
   },
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+  #home {
+    width: 100%;
+    height: 100%;
+  }
+
   button.fab-btn {
     bottom: 16px;
   }
@@ -138,12 +158,6 @@ export default {
   .map-view {
     width: 100%;
     height: 100%;
-
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
   }
 
   .overlay {
@@ -156,6 +170,26 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
+  }
+
+  .main {
+    width: 100%;
+    height: 100%;
+  }
+
+  .searchBox {
+    z-index: 1;
+    max-width: 300vw;
+    min-width: 450px;
+    position: fixed;
+    top: 20px;
+    left: 20px;
+
+    &.xs {
+      max-width: calc(100% - 40px);
+      min-width: calc(100% - 40px);
+      width: calc(100% - 40px);
+    }
   }
 </style>
 
