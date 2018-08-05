@@ -145,6 +145,17 @@ export default {
 };
 </script>
 
+<style lang="stylus">
+  @import "~vuetify/src/stylus/settings/_variables";
+
+  @media $display-breakpoints.xs-only {
+    .mapboxgl-ctrl-top-right {
+      margin-top: 65px;
+      margin-right: 10px;
+    }
+  }
+</style>
+
 <style lang="scss" scoped>
   #home {
     width: 100%;
