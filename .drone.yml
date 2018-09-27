@@ -49,7 +49,7 @@ pipeline:
     password: drone
     script:
       - unlink /Server/School/Drone/frontend/latest
-      - ln -s /Server/School/Drone/frontend/${DRONE_COMMIT_SHA:0:7} /Server/School/Drone/frontend/latest
+      - cd /Server/School/Drone/frontend && ln -s ./${DRONE_COMMIT_SHA:0:7} ./latest
   deploy-notify:
     image: plugins/slack
     webhook: https://hooks.slack.com/services/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
