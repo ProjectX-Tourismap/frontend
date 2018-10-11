@@ -43,6 +43,61 @@
              :color="(light ? 'black' : 'white')" @click="toggleLight" class="fab-btn">
         <v-icon>{{ light?'cloud':'wb_sunny' }}</v-icon>
       </v-btn>
+
+      <v-dialog v-model="showSearchResult"
+                fullscreen hide-overlay transition="dialog-bottom-transition">
+        <v-card>
+          <v-toolbar dark color="primary">
+            <v-btn icon dark @click.native="showSearchResult = false">
+              <v-icon>close</v-icon>
+            </v-btn>
+            <v-toolbar-title>Search Results</v-toolbar-title>
+          </v-toolbar>
+          <v-list three-line subheader>
+            <template v-for="i in [0,1,2,3]">
+              <v-list-tile avatar @click="showEntity = true" :key="i + 'test'">
+                <v-list-tile-avatar><img src="@/assets/logo.png"></v-list-tile-avatar>
+                <v-list-tile-content>
+                  <v-list-tile-title>地点名</v-list-tile-title>
+                  <v-list-tile-sub-title>ちょっとした説明</v-list-tile-sub-title>
+                </v-list-tile-content>
+              </v-list-tile>
+              <v-divider :key="i"/>
+            </template>
+          </v-list>
+        </v-card>
+      </v-dialog>
+
+      <v-dialog v-model="showEntity" scrollable max-width="500">
+        <v-card>
+          <v-card>
+            <v-img src="https://cdn.vuetifyjs.com/images/lists/ali.png" height="300px">
+              <v-layout column fill-height>
+                <v-card-title>
+                  <v-btn dark icon @click="showEntity = false">
+                    <v-icon>chevron_left</v-icon>
+                  </v-btn>
+                </v-card-title>
+
+                <v-spacer></v-spacer>
+
+                <v-card-title class="white--text pl-5 pt-5">
+                  <div class="display-1 pl-5 pt-5">地点名</div>
+                </v-card-title>
+              </v-layout>
+            </v-img>
+
+            <v-list two-line>
+              <v-list-tile>
+                <v-list-tile-content>
+                  Test
+                </v-list-tile-content>
+              </v-list-tile>
+            </v-list>
+          </v-card>
+          <v-btn depressed color="primary">Go to location</v-btn>
+        </v-card>
+      </v-dialog>
     </div>
   </div>
 </template>
@@ -88,6 +143,9 @@ export default {
       showMap: false,
       showLoading: true,
       searchText: '',
+      showSearchResult: false,
+      showEntity: false,
+      showEntityItem: undefined,
     };
   },
   mounted() {
@@ -112,6 +170,7 @@ export default {
     },
   },
   methods: {
+    dummy() {},
     setInitGeo(lat, lng) {
       this.initGeo = {
         lat: lat || 35.689138,
@@ -124,9 +183,6 @@ export default {
     },
     fetchEntities() {
       this.$http({
-        method: 'get',
-        baseURL: 'http://backend.syuchan.work/',
-        url: '/api',
         params: {
           query: `{nearEntitiesInPoint(point:{lat:"${this.initGeo.lat}" lng:"${this.initGeo.lng}"} distance:4 limit:100){id name geo{lat lng} category_id}}`,
         },
@@ -139,7 +195,17 @@ export default {
       this.fetchEntities();
     },
     clickSearchButton() {
+      this.showSearchResult = true;
+      /*
+      this.$http({
+        params: {
+          query: `{searchEntities(name:"${this.searchText}"){id name}}`,
+        },
+      }).then((res) => {
+
+      });
       console.log(this.searchText);
+      */
     },
   },
 };

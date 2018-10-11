@@ -13,7 +13,11 @@ import './registerServiceWorker';
 import './stylus/main.styl';
 
 Vue.config.productionTip = false;
-Vue.prototype.$http = axios;
+Vue.prototype.$http = axios.create({
+  method: 'get',
+  baseURL: 'http://backend.syuchan.work',
+  url: '/api',
+});
 
 Vue.use(VueMapbox, { mapboxgl: Mapbox });
 
