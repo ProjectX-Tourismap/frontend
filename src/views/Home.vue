@@ -12,24 +12,23 @@
                     label="Search..."
                     clearable
                     append-icon="search"
+                    :rules="[(v) => !!v || '']"
                     @click:append="clickSearchButton"
       ></v-text-field>
 
       <mgl-map
               :accessToken="mapbox.token"
               :mapStyle.sync="mapStyle"
-              :center="[initGeo.lng,initGeo.lat]" :zoom="14"
+              :center="[mapCenter.lng,mapCenter.lat]" :zoom="14"
               @load="loadMap"
               class="map-view" ref="mapView">
 
         <mgl-navigation-control position="top-right"/>
 
-        <mgl-marker :coordinates="[initGeo.lng,initGeo.lat]" color="blue"/>
-
         <mgl-marker v-for="entity in entities" :key="entity.id"
                     anchor="top"
                     :coordinates="[entity.geo.lng,entity.geo.lat]"
-                    :color="colors[entity.category_id]">
+                    :color="colors[entity.categoryId]">
           <mgl-popup :closeButton="false">
             <v-card :flat="true">
               <div>{{ entity.id }}</div>
@@ -53,25 +52,32 @@
             </v-btn>
             <v-toolbar-title>Search Results</v-toolbar-title>
           </v-toolbar>
-          <v-list three-line subheader>
-            <template v-for="i in [0,1,2,3]">
-              <v-list-tile avatar @click="showEntity = true" :key="i + 'test'">
-                <v-list-tile-avatar><img src="@/assets/logo.png"></v-list-tile-avatar>
+          <v-list three-line subheader v-if="searchResult.length !== 0">
+            <template v-for="(entity, i) in searchResult">
+              <v-list-tile @click="openEntityDialog(entity)" avater
+                           :key="`${entity.categoryId}:${entity.id}`">
+                <v-list-tile-avatar tile>
+                  <img :src="entity.picture" alt="thumb" @error="replaceDummyImg">
+                </v-list-tile-avatar>
                 <v-list-tile-content>
-                  <v-list-tile-title>地点名</v-list-tile-title>
-                  <v-list-tile-sub-title>ちょっとした説明</v-list-tile-sub-title>
+                  <v-list-tile-title>{{entity.name}}</v-list-tile-title>
+                  <v-list-tile-sub-title>{{entity.desc}}</v-list-tile-sub-title>
                 </v-list-tile-content>
               </v-list-tile>
-              <v-divider :key="i"/>
+              <v-divider :key="i"></v-divider>
             </template>
           </v-list>
+          <div class="result-empty" v-else>
+            <v-icon size="20vw" color="rgb(180,180,180)">speaker_notes_off</v-icon>
+            <div :style="{fontSize: '5rem'}">No results</div>
+          </div>
         </v-card>
       </v-dialog>
 
       <v-dialog v-model="showEntity" scrollable max-width="500">
         <v-card>
           <v-card>
-            <v-img src="https://cdn.vuetifyjs.com/images/lists/ali.png" height="300px">
+            <fallback-image :src="showEntityItem.picture" :fall-src="dummyImg">
               <v-layout column fill-height>
                 <v-card-title>
                   <v-btn dark icon @click="showEntity = false">
@@ -82,20 +88,23 @@
                 <v-spacer></v-spacer>
 
                 <v-card-title class="white--text pl-5 pt-5">
-                  <div class="display-1 pl-5 pt-5">地点名</div>
+                  <div class="display-1 pl-5 pt-5">{{showEntityItem.name}}</div>
                 </v-card-title>
               </v-layout>
-            </v-img>
+            </fallback-image>
 
-            <v-list two-line>
+            <v-list two-line v-if="showEntityItem.desc">
               <v-list-tile>
                 <v-list-tile-content>
-                  Test
+                  {{showEntityItem.desc}}
                 </v-list-tile-content>
               </v-list-tile>
             </v-list>
           </v-card>
-          <v-btn depressed color="primary">Go to location</v-btn>
+          <v-btn depressed color="primary"
+                 @click="goLocation(showEntityItem.geo)">
+            Go to location
+          </v-btn>
         </v-card>
       </v-dialog>
     </div>
@@ -104,6 +113,7 @@
 
 <script>
 import { MglGeolocateControl, MglMap, MglMarker, MglNavigationControl, MglPopup } from 'vue-mapbox';
+import FallbackImage from '../components/FallbackImage.vue';
 
 export default {
   components: {
@@ -112,10 +122,12 @@ export default {
     MglNavigationControl,
     MglMarker,
     MglPopup,
+    FallbackImage,
   },
   name: 'Home',
   data() {
     return {
+      dummyImg: '/dummy.png',
       mapbox: {
         token: 'pk.eyJ1Ijoic3l1Y2hhbjEwMDUiLCJhIjoiY2pqMmdlNGkwMHd0aTNxcHF2ZTkwYXh0ZyJ9.Vz7brvQpAt3RbaJ0lqUEyQ',
         style: {
@@ -123,20 +135,18 @@ export default {
           night: 'mapbox://styles/syuchan1005/cjj3glju63c7j2sqj7lnpehm5',
         },
       },
-      initGeo: {
+      mapCenter: {
         lat: undefined,
         lng: undefined,
       },
       entities: [{
         id: 1,
         name: 'test',
-        category_id: 1,
+        categoryId: 1,
         geo: {
           lat: 35.988138,
           lng: 139.707848,
         },
-        pref_id: 1,
-        city_id: 1,
       }],
       colors: ['blue', 'orange', 'green', 'yellow', 'red'],
       light: true,
@@ -144,8 +154,9 @@ export default {
       showLoading: true,
       searchText: '',
       showSearchResult: false,
+      searchResult: [],
       showEntity: false,
-      showEntityItem: undefined,
+      showEntityItem: {},
     };
   },
   mounted() {
@@ -170,9 +181,9 @@ export default {
     },
   },
   methods: {
-    dummy() {},
+    dummy: console.log,
     setInitGeo(lat, lng) {
-      this.initGeo = {
+      this.mapCenter = {
         lat: lat || 35.689138,
         lng: lng || 139.700848,
       };
@@ -184,7 +195,7 @@ export default {
     fetchEntities() {
       this.$http({
         params: {
-          query: `{nearEntitiesInPoint(point:{lat:"${this.initGeo.lat}" lng:"${this.initGeo.lng}"} distance:4 limit:100){id name geo{lat lng} category_id}}`,
+          query: `{nearEntitiesInPoint(point:{lat:"${this.mapCenter.lat}" lng:"${this.mapCenter.lng}"} distance:4 limit:100){id name geo{lat lng} categoryId}}`,
         },
       }).then((response) => {
         this.entities = response.data.data.nearEntitiesInPoint;
@@ -195,17 +206,32 @@ export default {
       this.fetchEntities();
     },
     clickSearchButton() {
-      this.showSearchResult = true;
-      /*
-      this.$http({
-        params: {
-          query: `{searchEntities(name:"${this.searchText}"){id name}}`,
-        },
-      }).then((res) => {
-
-      });
-      console.log(this.searchText);
-      */
+      if (this.searchText) {
+        this.$http({
+          params: {
+            query: `{searchEntities(name:"${this.searchText}"){categoryId id name desc picture geo{lat lng}}}`,
+          },
+        }).then((res) => {
+          this.searchResult = res.data.data.searchEntities;
+          this.showSearchResult = true;
+        });
+      }
+    },
+    replaceDummyImg(event) {
+      // eslint-disable-next-line
+      event.target.src = this.dummyImg;
+    },
+    openEntityDialog(entity) {
+      this.showEntityItem = entity;
+      this.showEntity = true;
+    },
+    goLocation(point) {
+      this.mapCenter = {
+        lat: point.lat || 35.689138,
+        lng: point.lng || 139.700848,
+      };
+      this.showEntity = false;
+      this.showSearchResult = false;
     },
   },
 };
@@ -267,6 +293,14 @@ export default {
       min-width: calc(100% - 40px);
       width: calc(100% - 40px);
     }
+  }
+
+  .result-empty {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: rgb(200,200,200);
   }
 </style>
 
