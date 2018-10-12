@@ -1,5 +1,5 @@
 <template>
-  <v-img :src="isFall ? fallSrc : src" height="300px" @error="isFall = true">
+  <v-img :src="!isFall && src ? src : fallSrc" height="300px" @error="isFall = true" class="abcd">
     <slot />
   </v-img>
 </template>
@@ -7,8 +7,8 @@
 <script>
 export default {
   props: {
-    src: String,
-    fallSrc: String,
+    src: String.required,
+    fallSrc: String.required,
   },
   name: 'FallbackImage',
   data() {

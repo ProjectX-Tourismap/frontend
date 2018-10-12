@@ -31,8 +31,10 @@
                     :color="colors[entity.categoryId]">
           <mgl-popup :closeButton="false">
             <v-card :flat="true">
-              <div>{{ entity.id }}</div>
               <div>{{ entity.name }}</div>
+              <v-btn block flat small color="primary" @click="openEntityDrawer(entity)">
+                ...more
+              </v-btn>
             </v-card>
           </mgl-popup>
         </mgl-marker>
@@ -107,6 +109,31 @@
           </v-btn>
         </v-card>
       </v-dialog>
+
+      <v-navigation-drawer v-model="showEntityDrawer" absolute temporary right>
+        <fallback-image :src="showEntityItem.picture" :fall-src="dummyImg" class="pt-0">
+          <v-layout column fill-height>
+            <v-card-title>
+              <v-btn dark icon @click="showEntityDrawer = false">
+                <v-icon>chevron_left</v-icon>
+              </v-btn>
+            </v-card-title>
+          </v-layout>
+        </fallback-image>
+
+        <v-divider></v-divider>
+
+        <v-list dense class="pt-0" v-if="showEntityItem.desc">
+          <v-list-tile>
+            <v-list-tile-content class="pt-2" :style="{fontSize: '1.4rem'}">
+              {{showEntityItem.name}}
+            </v-list-tile-content>
+          </v-list-tile>
+          <v-list-tile>
+            <v-list-tile-content>{{showEntityItem.desc}}</v-list-tile-content>
+          </v-list-tile>
+        </v-list>
+      </v-navigation-drawer>
     </div>
   </div>
 </template>
@@ -139,15 +166,7 @@ export default {
         lat: undefined,
         lng: undefined,
       },
-      entities: [{
-        id: 1,
-        name: 'test',
-        categoryId: 1,
-        geo: {
-          lat: 35.988138,
-          lng: 139.707848,
-        },
-      }],
+      entities: [],
       colors: ['blue', 'orange', 'green', 'yellow', 'red'],
       light: true,
       showMap: false,
@@ -157,6 +176,7 @@ export default {
       searchResult: [],
       showEntity: false,
       showEntityItem: {},
+      showEntityDrawer: false,
     };
   },
   mounted() {
@@ -179,9 +199,14 @@ export default {
     mapStyle() {
       this.$refs.mapView.map.setStyle(this.mapStyle);
     },
+    mapCenter: {
+      handler() {
+        this.fetchEntities();
+      },
+      deep: true,
+    },
   },
   methods: {
-    dummy: console.log,
     setInitGeo(lat, lng) {
       this.mapCenter = {
         lat: lat || 35.689138,
@@ -195,7 +220,7 @@ export default {
     fetchEntities() {
       this.$http({
         params: {
-          query: `{nearEntitiesInPoint(point:{lat:"${this.mapCenter.lat}" lng:"${this.mapCenter.lng}"} distance:4 limit:100){id name geo{lat lng} categoryId}}`,
+          query: `{nearEntitiesInPoint(point:{lat:"${this.mapCenter.lat}" lng:"${this.mapCenter.lng}"} distance:4 limit:100){categoryId id name desc picture geo{lat lng}}}`,
         },
       }).then((response) => {
         this.entities = response.data.data.nearEntitiesInPoint;
@@ -225,11 +250,12 @@ export default {
       this.showEntityItem = entity;
       this.showEntity = true;
     },
+    openEntityDrawer(entity) {
+      this.showEntityItem = entity;
+      this.showEntityDrawer = true;
+    },
     goLocation(point) {
-      this.mapCenter = {
-        lat: point.lat || 35.689138,
-        lng: point.lng || 139.700848,
-      };
+      this.mapCenter = point;
       this.showEntity = false;
       this.showSearchResult = false;
     },
@@ -300,7 +326,7 @@ export default {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    color: rgb(200,200,200);
+    color: rgb(200, 200, 200);
   }
 </style>
 
