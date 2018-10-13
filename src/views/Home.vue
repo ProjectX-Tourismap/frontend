@@ -220,7 +220,7 @@ export default {
     fetchEntities() {
       this.$http({
         params: {
-          query: `{nearEntitiesInPoint(point:{lat:"${this.mapCenter.lat}" lng:"${this.mapCenter.lng}"} distance:4 limit:100){categoryId id name desc picture geo{lat lng}}}`,
+          query: `{nearEntitiesInPoint(point:{lat:${this.mapCenter.lat} lng:${this.mapCenter.lng}} distance:4 limit:100){categoryId id name desc picture geo{lat lng}}}`,
         },
       }).then((response) => {
         this.entities = response.data.data.nearEntitiesInPoint;
