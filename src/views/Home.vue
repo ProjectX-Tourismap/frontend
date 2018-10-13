@@ -263,6 +263,12 @@ export default {
 };
 </script>
 
+<style>
+  .v-list__tile {
+    height: auto !important;
+  }
+</style>
+
 <style lang="stylus">
   @import "~vuetify/src/stylus/settings/_variables";
 
