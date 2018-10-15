@@ -3,21 +3,21 @@ pipeline:
     image: drillster/drone-volume-cache
     restore: true
     mount:
-    - ./node_modules
+      - ./node_modules
     volumes:
-    - /tmp/cache:/cache
+      - /tmp/cache:/cache
   build:
     image: node:9-alpine
     commands:
-    - npm install
-    - npm run build
+      - npm install
+      - npm run build
   rebuild-cache:
     image: drillster/drone-volume-cache
     rebuild: true
     mount:
-    - ./node_modules
+      - ./node_modules
     volumes:
-    - /tmp/cache:/cache
+      - /tmp/cache:/cache
   build-notify:
     image: plugins/slack
     webhook: https://hooks.slack.com/services/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
@@ -42,6 +42,14 @@ pipeline:
     target: /Server/School/Drone/frontend/${DRONE_COMMIT_SHA:0:7}
     when:
       status: [ success ]
+  ssh:
+    image: appleboy/drone-ssh
+    host: 192.168.1.251
+    username: drone
+    password: drone
+    script:
+      - unlink /Server/School/Drone/frontend/latest
+      - cd /Server/School/Drone/frontend && ln -s ./${DRONE_COMMIT_SHA:0:7} ./latest
   deploy-notify:
     image: plugins/slack
     webhook: https://hooks.slack.com/services/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
@@ -54,4 +62,3 @@ pipeline:
       {{else}}
         deploy failed.
       {{/success}}
-
