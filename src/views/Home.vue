@@ -56,16 +56,9 @@
           </v-toolbar>
           <v-list three-line subheader v-if="searchResult.length !== 0">
             <template v-for="(entity, i) in searchResult">
-              <v-list-tile @click="openEntityDialog(entity)" avater
-                           :key="`${entity.categoryId}:${entity.id}`">
-                <v-list-tile-avatar tile>
-                  <img :src="entity.picture" alt="thumb" @error="replaceDummyImg">
-                </v-list-tile-avatar>
-                <v-list-tile-content>
-                  <v-list-tile-title>{{entity.name}}</v-list-tile-title>
-                  <v-list-tile-sub-title>{{entity.desc}}</v-list-tile-sub-title>
-                </v-list-tile-content>
-              </v-list-tile>
+              <entity-list-tile @click="openEntityDialog(entity)"
+                                :entity="entity" :fail-img="dummyImg"
+                                :key="`${entity.categoryId}:${entity.id}`"/>
               <v-divider :key="i"></v-divider>
             </template>
           </v-list>
@@ -79,7 +72,7 @@
       <v-dialog v-model="showEntity" scrollable max-width="500">
         <v-card>
           <v-card>
-            <fallback-image :src="showEntityItem.picture" :fall-src="dummyImg">
+            <fallback-image :src="showDialogEntityItem.picture" :fall-src="dummyImg">
               <v-layout column fill-height>
                 <v-card-title>
                   <v-btn dark icon @click="showEntity = false">
@@ -90,31 +83,31 @@
                 <v-spacer></v-spacer>
 
                 <v-card-title class="white--text pl-5 pt-5">
-                  <div class="display-1 pl-5 pt-5">{{showEntityItem.name}}</div>
+                  <div class="display-1 pl-5 pt-5">{{showDialogEntityItem.name}}</div>
                 </v-card-title>
               </v-layout>
             </fallback-image>
 
-            <v-list two-line v-if="showEntityItem.desc">
+            <v-list two-line v-if="showDialogEntityItem.desc">
               <v-list-tile>
                 <v-list-tile-content>
-                  {{showEntityItem.desc}}
+                  {{showDialogEntityItem.desc}}
                 </v-list-tile-content>
               </v-list-tile>
             </v-list>
           </v-card>
           <v-btn depressed color="primary"
-                 @click="goLocation(showEntityItem.geo)">
+                 @click="goLocation(showDialogEntityItem.geo)">
             Go to location
           </v-btn>
         </v-card>
       </v-dialog>
 
-      <v-navigation-drawer v-model="showEntityDrawer" absolute temporary right>
-        <fallback-image :src="showEntityItem.picture" :fall-src="dummyImg" class="pt-0">
+      <v-navigation-drawer v-model="showEntityDrawer" absolute right>
+        <fallback-image :src="showDrawerEntityItem.picture" :fall-src="dummyImg" class="pt-0">
           <v-layout column fill-height>
             <v-card-title>
-              <v-btn dark icon @click="showEntityDrawer = false">
+              <v-btn fab icon dark small color="primary" @click="showEntityDrawer = false">
                 <v-icon>chevron_left</v-icon>
               </v-btn>
             </v-card-title>
@@ -123,14 +116,36 @@
 
         <v-divider></v-divider>
 
-        <v-list dense class="pt-0" v-if="showEntityItem.desc">
+        <v-list dense class="pt-0">
           <v-list-tile>
             <v-list-tile-content class="pt-2" :style="{fontSize: '1.4rem'}">
-              {{showEntityItem.name}}
+              {{showDrawerEntityItem.name}}
             </v-list-tile-content>
           </v-list-tile>
+          <v-list-tile v-if="showDrawerEntityItem.desc">
+            <v-list-tile-content>{{showDrawerEntityItem.desc}}</v-list-tile-content>
+          </v-list-tile>
           <v-list-tile>
-            <v-list-tile-content>{{showEntityItem.desc}}</v-list-tile-content>
+            <v-list-tile-content class="pt-4" :style="{fontSize: '1.3rem'}"
+                                 v-if="nearEntities.length !== 0">
+              近くの施設
+            </v-list-tile-content>
+            <v-list-tile-content class="pt-4 d-flex" :style="{alignItems: 'center'}" v-else>
+              <v-btn depressed round color="primary"
+                     @click="fetchNearEntities(showDrawerEntityItem)">
+                近くの施設を読み込む
+              </v-btn>
+            </v-list-tile-content>
+          </v-list-tile>
+          <v-list-tile class="near-entities" v-if="nearEntities.length !== 0">
+            <v-list>
+              <template v-for="(entity, i) in nearEntities">
+                <entity-list-tile @click="openEntityDialog(entity)"
+                                  :entity="entity" :fail-img="dummyImg"
+                                  :key="`${entity.categoryId}:${entity.id}`"/>
+                <v-divider :key="i"></v-divider>
+              </template>
+            </v-list>
           </v-list-tile>
         </v-list>
       </v-navigation-drawer>
@@ -141,6 +156,7 @@
 <script>
 import { MglGeolocateControl, MglMap, MglMarker, MglNavigationControl, MglPopup } from 'vue-mapbox';
 import FallbackImage from '../components/FallbackImage.vue';
+import EntityListTile from '../components/EntityListTile.vue';
 
 export default {
   components: {
@@ -150,6 +166,7 @@ export default {
     MglMarker,
     MglPopup,
     FallbackImage,
+    EntityListTile,
   },
   name: 'Home',
   data() {
@@ -167,7 +184,7 @@ export default {
         lng: undefined,
       },
       entities: [],
-      colors: ['blue', 'orange', 'green', 'yellow', 'red'],
+      colors: ['blue'],
       light: true,
       showMap: false,
       showLoading: true,
@@ -175,8 +192,10 @@ export default {
       showSearchResult: false,
       searchResult: [],
       showEntity: false,
-      showEntityItem: {},
+      showDialogEntityItem: {},
+      showDrawerEntityItem: {},
       showEntityDrawer: false,
+      nearEntities: [],
     };
   },
   mounted() {
@@ -204,6 +223,9 @@ export default {
         this.fetchEntities();
       },
       deep: true,
+    },
+    showEntityDrawer(val) {
+      if (!val) this.nearEntities = [];
     },
   },
   methods: {
@@ -242,22 +264,27 @@ export default {
         });
       }
     },
-    replaceDummyImg(event) {
-      // eslint-disable-next-line
-      event.target.src = this.dummyImg;
-    },
     openEntityDialog(entity) {
-      this.showEntityItem = entity;
+      this.showDialogEntityItem = entity;
       this.showEntity = true;
     },
     openEntityDrawer(entity) {
-      this.showEntityItem = entity;
+      this.showDrawerEntityItem = entity;
       this.showEntityDrawer = true;
     },
     goLocation(point) {
       this.mapCenter = point;
       this.showEntity = false;
       this.showSearchResult = false;
+    },
+    fetchNearEntities(entity) {
+      this.$http({
+        params: {
+          query: `{nearEntitiesInPoint(point:{lat:${entity.geo.lat} lng:${entity.geo.lng}}distance:5limit:100){categoryId id name desc picture geo{lat lng}}}`,
+        },
+      }).then((response) => {
+        this.nearEntities = response.data.data.nearEntitiesInPoint.slice(1);
+      });
     },
   },
 };
@@ -266,6 +293,15 @@ export default {
 <style>
   .v-list__tile {
     height: auto !important;
+  }
+
+  .v-list__tile__avatar {
+    margin-top: 3px;
+    margin-bottom: 3px;
+  }
+
+  .near-entities .v-list__tile {
+    padding: 0 3px !important;
   }
 </style>
 
