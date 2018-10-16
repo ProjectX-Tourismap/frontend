@@ -14,6 +14,7 @@
                     append-icon="search"
                     :rules="[(v) => !!v || '']"
                     @click:append="clickSearchButton"
+                    @keyup.native.enter="clickSearchButton"
       ></v-text-field>
 
       <mgl-map
@@ -62,10 +63,17 @@
               <v-divider :key="i"></v-divider>
             </template>
           </v-list>
-          <div class="result-empty" v-else>
-            <v-icon size="20vw" color="rgb(180,180,180)">speaker_notes_off</v-icon>
-            <div :style="{fontSize: '5rem'}">No results</div>
-          </div>
+        </v-card>
+      </v-dialog>
+
+      <v-dialog v-model="showNoResult">
+        <v-card>
+          <v-card-title>検索結果がありませんでした</v-card-title>
+
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn outline @click="showNoResult = false">Close</v-btn>
+          </v-card-actions>
         </v-card>
       </v-dialog>
 
@@ -196,6 +204,7 @@ export default {
       showDrawerEntityItem: {},
       showEntityDrawer: false,
       nearEntities: [],
+      showNoResult: false,
     };
   },
   mounted() {
@@ -260,7 +269,11 @@ export default {
           },
         }).then((res) => {
           this.searchResult = res.data.data.searchEntities;
-          this.showSearchResult = true;
+          if (this.searchResult.length !== 0) {
+            this.showSearchResult = true;
+          } else {
+            this.showNoResult = true;
+          }
         });
       }
     },
@@ -361,14 +374,6 @@ export default {
       min-width: calc(100% - 40px);
       width: calc(100% - 40px);
     }
-  }
-
-  .result-empty {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    color: rgb(200, 200, 200);
   }
 </style>
 

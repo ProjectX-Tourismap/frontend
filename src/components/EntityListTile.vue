@@ -27,5 +27,8 @@ export default {
 </script>
 
 <style scoped>
-
+  .v-list__tile__avatar {
+    margin-top: 3px !important;
+    margin-bottom: 3px !important;
+  }
 </style>
