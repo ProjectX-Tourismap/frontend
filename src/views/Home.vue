@@ -142,6 +142,12 @@
 import { MglGeolocateControl, MglMap, MglMarker, MglNavigationControl, MglPopup } from 'vue-mapbox';
 import FallbackImage from '../components/FallbackImage.vue';
 
+const textFields = ['country-label-lg', 'country-label-md', 'country-label-sm',
+  'place-city-lg-n', 'place-city-lg-s', 'place-city-md-n', 'place-city-md-s', 'place-city-sm',
+  'place-island', 'place-town', 'place-village', 'place-hamlet', 'place-suburb',
+  'place-neighbourhood', 'place-islet-archipelago-aboriginal', 'poi-scalerank1', 'poi-scalerank2',
+  'road-label-large', 'road-label-medium', 'road-label-small', 'poi-scalerank3'];
+
 export default {
   components: {
     MglMap,
@@ -229,6 +235,7 @@ export default {
     loadMap() {
       this.showLoading = false;
       this.fetchEntities();
+      this.setLanguage('ja');
     },
     clickSearchButton() {
       if (this.searchText) {
@@ -258,6 +265,12 @@ export default {
       this.mapCenter = point;
       this.showEntity = false;
       this.showSearchResult = false;
+    },
+    setLanguage(lang) {
+      textFields.forEach((v) => {
+        this.$refs.mapView.map
+          .setLayoutProperty(v, 'text-field', ['get', `name_${lang}`]);
+      });
     },
   },
 };
