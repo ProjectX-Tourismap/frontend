@@ -11,3 +11,9 @@ export default {
   name: 'App',
 };
 </script>
+
+<style>
+  html, body {
+    overflow: hidden;
+  }
+</style>
