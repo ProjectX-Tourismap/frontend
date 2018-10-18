@@ -5,17 +5,6 @@
     </div>
 
     <div v-if="showMap" class="main">
-      <v-text-field class="searchBox" :class="{xs: $vuetify.breakpoint.xsOnly}"
-                    v-model="searchText"
-                    solo
-                    type="text"
-                    label="Search..."
-                    clearable
-                    append-icon="search"
-                    :rules="[(v) => !!v || '']"
-                    @click:append="clickSearchButton"
-      ></v-text-field>
-
       <mgl-map
               :accessToken="mapbox.token"
               :mapStyle.sync="mapStyle"
@@ -39,6 +28,28 @@
           </mgl-popup>
         </mgl-marker>
       </mgl-map>
+
+      <v-text-field class="searchBox" :class="{xs: $vuetify.breakpoint.xsOnly}"
+                    v-model="searchText"
+                    solo
+                    type="text"
+                    :label="language.keys.search"
+                    clearable
+                    append-icon="search"
+                    :rules="[(v) => !!v || '']"
+                    @click:append="clickSearchButton"
+      ></v-text-field>
+
+      <v-menu :style="{position:'absolute', top: '15px', right: '45px'}">
+        <v-btn color="white" slot="activator">
+          <v-icon left dark>language</v-icon>{{language.name}}
+        </v-btn>
+        <v-list>
+          <v-list-tile v-for="(lang, index) in languages" :key="index" @click="nowLang = index">
+            <v-list-tile-title>{{ lang.name }}</v-list-tile-title>
+          </v-list-tile>
+        </v-list>
+      </v-menu>
 
       <v-btn absolute :dark="light" fab bottom right
              :color="(light ? 'black' : 'white')" @click="toggleLight" class="fab-btn">
@@ -163,6 +174,22 @@ export default {
   name: 'Home',
   data() {
     return {
+      nowLang: 0,
+      languages: [
+        {
+          code: 'ja',
+          name: 'Japanese',
+          keys: {
+            search: '検索...',
+          },
+        }, {
+          code: 'en',
+          name: 'English',
+          keys: {
+            search: 'Search...',
+          },
+        }
+      ],
       dummyImg: '/dummy.png',
       mapbox: {
         token: 'pk.eyJ1Ijoic3l1Y2hhbjEwMDUiLCJhIjoiY2pqMmdlNGkwMHd0aTNxcHF2ZTkwYXh0ZyJ9.Vz7brvQpAt3RbaJ0lqUEyQ',
@@ -203,6 +230,9 @@ export default {
     mapStyle() {
       return this.light ? this.mapbox.style.day : this.mapbox.style.night;
     },
+    language() {
+      return this.languages[this.nowLang];
+    },
   },
   watch: {
     mapStyle() {
@@ -213,6 +243,11 @@ export default {
         this.fetchEntities();
       },
       deep: true,
+    },
+    nowLang(val) {
+      textFields.forEach((v) => {
+        this.$refs.mapView.map.setLayoutProperty(v, 'text-field', ['get', `name_${this.languages[val].code}`]);
+      });
     },
   },
   methods: {
@@ -236,8 +271,8 @@ export default {
       });
     },
     loadMap() {
-      this.showLoading = false;
       this.fetchEntities();
+      this.showLoading = false;
     },
     clickSearchButton() {
       if (this.searchText) {
@@ -267,12 +302,6 @@ export default {
       this.mapCenter = point;
       this.showEntity = false;
       this.showSearchResult = false;
-    },
-    setLanguage(lang) {
-      textFields.forEach((v) => {
-        this.$refs.mapView.map
-          .setLayoutProperty(v, 'text-field', ['get', `name_${lang}`]);
-      });
     },
   },
 };
