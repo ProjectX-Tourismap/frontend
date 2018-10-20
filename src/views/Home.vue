@@ -53,7 +53,7 @@
       </v-menu>
 
       <v-speed-dial v-model="showLayerDial" fab absolute bottom right
-                    transition="slide-y-reverse-transition" :style="{bottom:'50px'}">
+                    transition="slide-y-reverse-transition" class="map-selector">
         <v-btn slot="activator" v-model="showLayerDial" dark fab>
           <v-icon>layers</v-icon>
           <v-icon>close</v-icon>
@@ -395,8 +395,9 @@ export default {
 
   @media $display-breakpoints.xs-only {
     .mapboxgl-ctrl-top-right {
-      margin-top: 65px;
-      margin-right: 10px;
+      position fixed;
+      top: 65px;
+      right: 10px;
     }
   }
 </style>
@@ -449,7 +450,7 @@ export default {
   }
 
   .language-selector {
-    position: absolute;
+    position: fixed;
     top: 15px;
     right: 45px;
 
@@ -457,6 +458,11 @@ export default {
       top: 70px;
       right: 55px;
     }
+  }
+
+  .map-selector {
+    position: fixed;
+    bottom: 50px !important;
   }
 </style>
 
