@@ -241,6 +241,7 @@ export default {
       showEntityDrawer: false,
       nearEntities: [],
       showNoResult: false,
+      changeLanguageCB: undefined,
     };
   },
   mounted() {
@@ -273,9 +274,19 @@ export default {
       deep: true,
     },
     nowLang(val) {
-      textFields.forEach((v) => {
-        this.$refs.mapView.map.setLayoutProperty(v, 'text-field', ['get', `name_${this.languages[val].code}`]);
-      });
+      const func = (lang) => {
+        textFields.forEach((v) => {
+          this.$refs.mapView.map.setLayoutProperty(v, 'text-field', ['get', `name_${this.languages[lang].code}`]);
+        });
+      };
+      func(val);
+      this.changeLanguageCB = () => {
+        func(val);
+      };
+    },
+    changeLanguageCB(func) {
+      if (this.changeLanguageCB) this.$refs.mapView.map.off('styledata', this.changeLanguageCB);
+      this.$refs.mapView.map.on('styledata', func);
     },
     showEntityDrawer(val) {
       if (!val) this.nearEntities = [];
