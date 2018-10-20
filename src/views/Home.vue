@@ -1,7 +1,7 @@
 <template>
   <div id="home">
     <div v-if="!(showMap && showControl)" class="overlay">
-      <square-spin-loader color="white" size="80px"></square-spin-loader>
+      <ball-beat-loader color="white" size="20px"></ball-beat-loader>
     </div>
 
     <div v-if="showMap" class="main">
