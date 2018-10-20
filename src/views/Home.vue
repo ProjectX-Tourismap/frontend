@@ -41,10 +41,25 @@
         </mgl-marker>
       </mgl-map>
 
-      <v-btn absolute :dark="light" fab bottom right
-             :color="(light ? 'black' : 'white')" @click="toggleLight" class="fab-btn">
-        <v-icon>{{ light?'cloud':'wb_sunny' }}</v-icon>
-      </v-btn>
+      <v-speed-dial v-model="showLayerDial" fab absolute bottom right
+                    transition="slide-y-reverse-transition" :style="{bottom:'50px'}">
+        <v-btn slot="activator" v-model="showLayerDial" dark fab>
+          <v-icon>layers</v-icon>
+          <v-icon>close</v-icon>
+        </v-btn>
+
+        <v-btn fab small color="white" @click="nowMapType = 'aerial'">
+          <v-icon>local_airport</v-icon>
+        </v-btn>
+
+        <v-btn fab dark small color="lightgray" @click="nowMapType = 'night'">
+          <v-icon>wb_cloudy</v-icon>
+        </v-btn>
+
+        <v-btn fab small color="white" @click="nowMapType = 'day'">
+          <v-icon>wb_sunny</v-icon>
+        </v-btn>
+      </v-speed-dial>
 
       <v-dialog v-model="showSearchResult"
                 fullscreen hide-overlay transition="dialog-bottom-transition">
@@ -185,6 +200,7 @@ export default {
         style: {
           day: 'mapbox://styles/syuchan1005/cjj2xeu8z2u7k2snbviv748qd',
           night: 'mapbox://styles/syuchan1005/cjj3glju63c7j2sqj7lnpehm5',
+          aerial: 'mapbox://styles/syuchan1005/cjnedhbo933d82rsf6hd6nwdx',
         },
       },
       mapCenter: {
@@ -193,7 +209,7 @@ export default {
       },
       entities: [],
       colors: ['blue'],
-      light: true,
+      nowMapType: 'day',
       showMap: false,
       showLoading: true,
       searchText: '',
@@ -205,6 +221,7 @@ export default {
       showEntityDrawer: false,
       nearEntities: [],
       showNoResult: false,
+      showLayerDial: false,
     };
   },
   mounted() {
@@ -220,7 +237,7 @@ export default {
   },
   computed: {
     mapStyle() {
-      return this.light ? this.mapbox.style.day : this.mapbox.style.night;
+      return this.mapbox.style[this.nowMapType];
     },
   },
   watch: {
