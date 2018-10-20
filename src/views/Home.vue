@@ -5,18 +5,6 @@
     </div>
 
     <div v-if="showMap" class="main">
-      <v-text-field class="searchBox" :class="{xs: $vuetify.breakpoint.xsOnly}"
-                    v-model="searchText"
-                    solo
-                    type="text"
-                    label="Search..."
-                    clearable
-                    append-icon="search"
-                    :rules="[(v) => !!v || '']"
-                    @click:append="clickSearchButton"
-                    @keyup.native.enter="clickSearchButton"
-      ></v-text-field>
-
       <mgl-map
               :accessToken="mapbox.token"
               :mapStyle.sync="mapStyle"
@@ -40,6 +28,29 @@
           </mgl-popup>
         </mgl-marker>
       </mgl-map>
+
+      <v-text-field class="searchBox" :class="{xs: $vuetify.breakpoint.xsOnly}"
+                    v-model="searchText"
+                    solo
+                    type="text"
+                    :label="language.keys.search"
+                    clearable
+                    append-icon="search"
+                    :rules="[(v) => !!v || '']"
+                    @click:append="clickSearchButton"
+      ></v-text-field>
+
+      <v-menu class="language-selector" :class="{xs: $vuetify.breakpoint.xsOnly}">
+        <v-btn color="white" slot="activator">
+          <v-icon left dark>language</v-icon>
+          {{language.name}}
+        </v-btn>
+        <v-list>
+          <v-list-tile v-for="(lang, index) in languages" :key="index" @click="nowLang = index">
+            <v-list-tile-title>{{ lang.name }}</v-list-tile-title>
+          </v-list-tile>
+        </v-list>
+      </v-menu>
 
       <v-speed-dial v-model="showLayerDial" fab absolute bottom right
                     transition="slide-y-reverse-transition" :style="{bottom:'50px'}">
@@ -181,6 +192,15 @@ import { MglGeolocateControl, MglMap, MglMarker, MglNavigationControl, MglPopup 
 import FallbackImage from '../components/FallbackImage.vue';
 import EntityListTile from '../components/EntityListTile.vue';
 
+const textFields = ['country-label-lg', 'country-label-md', 'country-label-sm',
+  'state-label-lg', 'state-label-md', 'state-label-sm',
+  'place-city-lg-n', 'place-city-lg-s', 'place-city-md-n', 'place-city-md-s', 'place-city-sm',
+  'place-island', 'place-town', 'place-village', 'place-hamlet', 'place-suburb',
+  'place-neighbourhood', 'place-islet-archipelago-aboriginal',
+  'airport-label', 'poi-scalerank1', 'poi-scalerank2', 'poi-scalerank3',
+  'rail-label-major', 'rail-label-minor',
+  'road-label-large', 'road-label-medium', 'road-label-small'];
+
 export default {
   components: {
     MglMap,
@@ -194,6 +214,22 @@ export default {
   name: 'Home',
   data() {
     return {
+      nowLang: 0,
+      languages: [
+        {
+          code: 'ja',
+          name: 'Japanese',
+          keys: {
+            search: '検索...',
+          },
+        }, {
+          code: 'en',
+          name: 'English',
+          keys: {
+            search: 'Search...',
+          },
+        },
+      ],
       dummyImg: '/dummy.png',
       mapbox: {
         token: 'pk.eyJ1Ijoic3l1Y2hhbjEwMDUiLCJhIjoiY2pqMmdlNGkwMHd0aTNxcHF2ZTkwYXh0ZyJ9.Vz7brvQpAt3RbaJ0lqUEyQ',
@@ -221,6 +257,7 @@ export default {
       showEntityDrawer: false,
       nearEntities: [],
       showNoResult: false,
+      changeLanguageCB: undefined,
       showLayerDial: false,
     };
   },
@@ -239,6 +276,9 @@ export default {
     mapStyle() {
       return this.mapbox.style[this.nowMapType];
     },
+    language() {
+      return this.languages[this.nowLang];
+    },
   },
   watch: {
     mapStyle() {
@@ -249,6 +289,21 @@ export default {
         this.fetchEntities();
       },
       deep: true,
+    },
+    nowLang(val) {
+      const func = (lang) => {
+        textFields.forEach((v) => {
+          this.$refs.mapView.map.setLayoutProperty(v, 'text-field', ['get', `name_${this.languages[lang].code}`]);
+        });
+      };
+      func(val);
+      this.changeLanguageCB = () => {
+        func(val);
+      };
+    },
+    changeLanguageCB(func) {
+      if (this.changeLanguageCB) this.$refs.mapView.map.off('styledata', this.changeLanguageCB);
+      this.$refs.mapView.map.on('styledata', func);
     },
     showEntityDrawer(val) {
       if (!val) this.nearEntities = [];
@@ -275,8 +330,8 @@ export default {
       });
     },
     loadMap() {
-      this.showLoading = false;
       this.fetchEntities();
+      this.showLoading = false;
     },
     clickSearchButton() {
       if (this.searchText) {
@@ -390,6 +445,17 @@ export default {
       max-width: calc(100% - 40px);
       min-width: calc(100% - 40px);
       width: calc(100% - 40px);
+    }
+  }
+
+  .language-selector {
+    position: absolute;
+    top: 15px;
+    right: 45px;
+
+    &.xs {
+      top: 70px;
+      right: 55px;
     }
   }
 </style>
