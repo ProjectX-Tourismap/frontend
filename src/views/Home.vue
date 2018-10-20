@@ -40,9 +40,10 @@
                     @click:append="clickSearchButton"
       ></v-text-field>
 
-      <v-menu :style="{position:'absolute', top: '15px', right: '45px'}">
+      <v-menu class="language-selector" :class="{xs: $vuetify.breakpoint.xsOnly}">
         <v-btn color="white" slot="activator">
-          <v-icon left dark>language</v-icon>{{language.name}}
+          <v-icon left dark>language</v-icon>
+          {{language.name}}
         </v-btn>
         <v-list>
           <v-list-tile v-for="(lang, index) in languages" :key="index" @click="nowLang = index">
@@ -212,7 +213,7 @@ export default {
           keys: {
             search: 'Search...',
           },
-        }
+        },
       ],
       dummyImg: '/dummy.png',
       mapbox: {
@@ -416,6 +417,17 @@ export default {
       max-width: calc(100% - 40px);
       min-width: calc(100% - 40px);
       width: calc(100% - 40px);
+    }
+  }
+
+  .language-selector {
+    position: absolute;
+    top: 15px;
+    right: 45px;
+
+    &.xs {
+      top: 70px;
+      right: 55px;
     }
   }
 </style>
