@@ -1,6 +1,12 @@
 {
-  "name": "frontend",
-  "short_name": "frontend",
+  "name": "Tourismap",
+  "short_name": "Tourismap",
+  "description": "Tourismap - Frontend",
+  "start_url": "/index.html",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
+  "display": "standalone",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "/img/icons/android-chrome-192x192.png",
@@ -12,9 +18,5 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ],
-  "start_url": "/index.html",
-  "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#4DBA87"
+  ]
 }
