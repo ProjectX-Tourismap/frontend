@@ -1,6 +1,6 @@
 <template>
   <div id="home">
-    <div v-if="showLoading" class="overlay">
+    <div v-if="!(showMap && showControl)" class="overlay">
       <square-spin-loader color="white" size="80px"></square-spin-loader>
     </div>
 
@@ -252,7 +252,6 @@ export default {
       nowMapType: 'day',
       showMap: false,
       showControl: false,
-      showLoading: true,
       searchText: '',
       showSearchResult: false,
       searchResult: [],
@@ -321,7 +320,6 @@ export default {
     },
     loadMap() {
       this.fetchEntities();
-      this.showLoading = false;
       this.$refs.mapView.map.on('styledata', this.changeLanguage);
     },
     changeLanguage() {
@@ -418,6 +416,7 @@ export default {
   }
 
   .overlay {
+    z-index: 1000;
     background: rgba(0, 0, 0, 0.5);
     position: absolute;
     top: 0;
