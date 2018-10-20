@@ -188,6 +188,8 @@
 </template>
 
 <script>
+import Vue from 'vue';
+
 import { MglGeolocateControl, MglMap, MglMarker, MglNavigationControl, MglPopup } from 'vue-mapbox';
 import FallbackImage from '../components/FallbackImage.vue';
 import EntityListTile from '../components/EntityListTile.vue';
@@ -230,7 +232,7 @@ export default {
           },
         },
       ],
-      dummyImg: '/dummy.png',
+      dummyImg: '/dummy.svg',
       mapbox: {
         token: 'pk.eyJ1Ijoic3l1Y2hhbjEwMDUiLCJhIjoiY2pqMmdlNGkwMHd0aTNxcHF2ZTkwYXh0ZyJ9.Vz7brvQpAt3RbaJ0lqUEyQ',
         style: {
@@ -291,19 +293,7 @@ export default {
       deep: true,
     },
     nowLang(val) {
-      const func = (lang) => {
-        textFields.forEach((v) => {
-          this.$refs.mapView.map.setLayoutProperty(v, 'text-field', ['get', `name_${this.languages[lang].code}`]);
-        });
-      };
-      func(val);
-      this.changeLanguageCB = () => {
-        func(val);
-      };
-    },
-    changeLanguageCB(func) {
-      if (this.changeLanguageCB) this.$refs.mapView.map.off('styledata', this.changeLanguageCB);
-      this.$refs.mapView.map.on('styledata', func);
+      this.changeLanguage(val);
     },
     showEntityDrawer(val) {
       if (!val) this.nearEntities = [];
@@ -317,9 +307,6 @@ export default {
       };
       this.showMap = true;
     },
-    toggleLight() {
-      this.light = !this.light;
-    },
     fetchEntities() {
       this.$http({
         params: {
@@ -332,6 +319,15 @@ export default {
     loadMap() {
       this.fetchEntities();
       this.showLoading = false;
+      this.$refs.mapView.map.on('styledata', this.changeLanguage);
+    },
+    changeLanguage() {
+      Vue.nextTick(() => {
+        const text = `name_${this.language.code}`;
+        textFields.forEach((v) => {
+          this.$refs.mapView.map.setLayoutProperty(v, 'text-field', ['get', text]);
+        });
+      });
     },
     clickSearchButton() {
       if (this.searchText) {
@@ -354,6 +350,7 @@ export default {
       this.showEntity = true;
     },
     openEntityDrawer(entity) {
+      this.nearEntities = [];
       this.showDrawerEntityItem = entity;
       this.showEntityDrawer = true;
     },
