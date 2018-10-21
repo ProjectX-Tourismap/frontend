@@ -2,7 +2,7 @@ import Vue from 'vue';
 import axios from 'axios';
 import VueMapbox from 'vue-mapbox';
 import Mapbox from 'mapbox-gl';
-import { SquareSpinLoader } from 'vue-loaders';
+import { BallBeatLoader } from 'vue-loaders';
 
 import 'vue-loaders/dist/vue-loaders.css';
 import './plugins/vuetify';
@@ -21,7 +21,7 @@ Vue.prototype.$http = axios.create({
 
 Vue.use(VueMapbox, { mapboxgl: Mapbox });
 
-Vue.component(SquareSpinLoader.name, SquareSpinLoader);
+Vue.component(BallBeatLoader.name, BallBeatLoader);
 
 new Vue({
   router,

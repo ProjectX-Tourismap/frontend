@@ -1,7 +1,7 @@
 <template>
   <div id="home">
-    <div v-if="showLoading" class="overlay">
-      <square-spin-loader color="white" size="80px"></square-spin-loader>
+    <div v-if="!(showMap && showControl)" class="overlay">
+      <ball-beat-loader color="white" size="20px"></ball-beat-loader>
     </div>
 
     <div v-if="showMap" class="main">
@@ -12,12 +12,12 @@
               @load="loadMap"
               class="map-view" ref="mapView">
 
-        <mgl-navigation-control position="top-right"/>
+        <mgl-navigation-control @added="showControl = true" position="top-right"/>
 
         <mgl-marker v-for="entity in entities" :key="entity.id"
                     anchor="top"
                     :coordinates="[entity.geo.lng,entity.geo.lat]"
-                    :color="colors[entity.categoryId]">
+                    :color="colors[parseInt(entity.categoryId.substr(0, 2), 10)]">
           <mgl-popup :closeButton="false">
             <v-card :flat="true">
               <div>{{ entity.name }}</div>
@@ -38,9 +38,11 @@
                     append-icon="search"
                     :rules="[(v) => !!v || '']"
                     @click:append="clickSearchButton"
+                    v-show="showControl"
       ></v-text-field>
 
-      <v-menu class="language-selector" :class="{xs: $vuetify.breakpoint.xsOnly}">
+      <v-menu class="language-selector"
+              :class="{xs: $vuetify.breakpoint.xsOnly}" v-show="showControl">
         <v-btn color="white" slot="activator">
           <v-icon left dark>language</v-icon>
           {{language.name}}
@@ -52,8 +54,8 @@
         </v-list>
       </v-menu>
 
-      <v-speed-dial v-model="showLayerDial" fab absolute bottom right
-                    transition="slide-y-reverse-transition" :style="{bottom:'50px'}">
+      <v-speed-dial v-model="showLayerDial" fab absolute bottom right v-show="showControl"
+                    transition="slide-y-reverse-transition" class="map-selector">
         <v-btn slot="activator" v-model="showLayerDial" dark fab>
           <v-icon>layers</v-icon>
           <v-icon>close</v-icon>
@@ -71,123 +73,125 @@
           <v-icon>wb_sunny</v-icon>
         </v-btn>
       </v-speed-dial>
+    </div>
 
-      <v-dialog v-model="showSearchResult"
-                fullscreen hide-overlay transition="dialog-bottom-transition">
+    <v-dialog v-model="showSearchResult"
+              fullscreen hide-overlay transition="dialog-bottom-transition">
+      <v-card>
+        <v-toolbar dark color="primary">
+          <v-btn icon dark @click.native="showSearchResult = false">
+            <v-icon>close</v-icon>
+          </v-btn>
+          <v-toolbar-title>Search Results</v-toolbar-title>
+        </v-toolbar>
+        <v-list three-line subheader v-if="searchResult.length !== 0">
+          <template v-for="(entity, i) in searchResult">
+            <entity-list-tile @click="openEntityDialog(entity)"
+                              :entity="entity" :fail-img="dummyImg"
+                              :key="`${entity.categoryId}:${entity.id}`"/>
+            <v-divider :key="i"></v-divider>
+          </template>
+        </v-list>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="showNoResult">
+      <v-card>
+        <v-card-title>検索結果がありませんでした</v-card-title>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn outline @click="showNoResult = false">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="showEntity" scrollable max-width="500">
+      <v-card>
         <v-card>
-          <v-toolbar dark color="primary">
-            <v-btn icon dark @click.native="showSearchResult = false">
-              <v-icon>close</v-icon>
+          <fallback-image :src="showDialogEntityItem.picture" :fall-src="dummyImg">
+            <v-layout column fill-height>
+              <v-card-title>
+                <v-btn dark icon @click="showEntity = false">
+                  <v-icon>chevron_left</v-icon>
+                </v-btn>
+              </v-card-title>
+
+              <v-spacer></v-spacer>
+
+              <v-card-title class="white--text pl-5 pt-5">
+                <div class="display-1 pl-5 pt-5">{{showDialogEntityItem.name}}</div>
+              </v-card-title>
+            </v-layout>
+          </fallback-image>
+
+          <v-list two-line v-if="showDialogEntityItem.desc">
+            <v-list-tile>
+              <v-list-tile-content>
+                {{showDialogEntityItem.desc}}
+              </v-list-tile-content>
+            </v-list-tile>
+          </v-list>
+        </v-card>
+        <v-btn depressed color="primary"
+               @click="goLocation(showDialogEntityItem.geo)">
+          Go to location
+        </v-btn>
+      </v-card>
+    </v-dialog>
+
+    <v-navigation-drawer v-model="showEntityDrawer" absolute right stateless touchless>
+      <fallback-image :src="showDrawerEntityItem.picture" :fall-src="dummyImg" class="pt-0">
+        <v-layout column fill-height>
+          <v-card-title>
+            <v-btn fab icon dark small color="primary" @click="showEntityDrawer = false">
+              <v-icon>chevron_left</v-icon>
             </v-btn>
-            <v-toolbar-title>Search Results</v-toolbar-title>
-          </v-toolbar>
-          <v-list three-line subheader v-if="searchResult.length !== 0">
-            <template v-for="(entity, i) in searchResult">
+          </v-card-title>
+        </v-layout>
+      </fallback-image>
+
+      <v-divider></v-divider>
+
+      <v-list dense class="pt-0">
+        <v-list-tile>
+          <v-list-tile-content class="pt-2" :style="{fontSize: '1.4rem'}">
+            {{showDrawerEntityItem.name}}
+          </v-list-tile-content>
+        </v-list-tile>
+        <v-list-tile v-if="showDrawerEntityItem.desc">
+          <v-list-tile-content>{{showDrawerEntityItem.desc}}</v-list-tile-content>
+        </v-list-tile>
+        <v-list-tile>
+          <v-list-tile-content class="pt-4" :style="{fontSize: '1.3rem'}"
+                               v-if="nearEntities.length !== 0">
+            近くの施設
+          </v-list-tile-content>
+          <v-list-tile-content class="pt-4 d-flex" :style="{alignItems: 'center'}" v-else>
+            <v-btn depressed round color="primary"
+                   @click="fetchNearEntities(showDrawerEntityItem)">
+              近くの施設を読み込む
+            </v-btn>
+          </v-list-tile-content>
+        </v-list-tile>
+        <v-list-tile class="near-entities" v-if="nearEntities.length !== 0">
+          <v-list>
+            <template v-for="(entity, i) in nearEntities">
               <entity-list-tile @click="openEntityDialog(entity)"
                                 :entity="entity" :fail-img="dummyImg"
                                 :key="`${entity.categoryId}:${entity.id}`"/>
               <v-divider :key="i"></v-divider>
             </template>
           </v-list>
-        </v-card>
-      </v-dialog>
-
-      <v-dialog v-model="showNoResult">
-        <v-card>
-          <v-card-title>検索結果がありませんでした</v-card-title>
-
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn outline @click="showNoResult = false">Close</v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-
-      <v-dialog v-model="showEntity" scrollable max-width="500">
-        <v-card>
-          <v-card>
-            <fallback-image :src="showDialogEntityItem.picture" :fall-src="dummyImg">
-              <v-layout column fill-height>
-                <v-card-title>
-                  <v-btn dark icon @click="showEntity = false">
-                    <v-icon>chevron_left</v-icon>
-                  </v-btn>
-                </v-card-title>
-
-                <v-spacer></v-spacer>
-
-                <v-card-title class="white--text pl-5 pt-5">
-                  <div class="display-1 pl-5 pt-5">{{showDialogEntityItem.name}}</div>
-                </v-card-title>
-              </v-layout>
-            </fallback-image>
-
-            <v-list two-line v-if="showDialogEntityItem.desc">
-              <v-list-tile>
-                <v-list-tile-content>
-                  {{showDialogEntityItem.desc}}
-                </v-list-tile-content>
-              </v-list-tile>
-            </v-list>
-          </v-card>
-          <v-btn depressed color="primary"
-                 @click="goLocation(showDialogEntityItem.geo)">
-            Go to location
-          </v-btn>
-        </v-card>
-      </v-dialog>
-
-      <v-navigation-drawer v-model="showEntityDrawer" absolute right>
-        <fallback-image :src="showDrawerEntityItem.picture" :fall-src="dummyImg" class="pt-0">
-          <v-layout column fill-height>
-            <v-card-title>
-              <v-btn fab icon dark small color="primary" @click="showEntityDrawer = false">
-                <v-icon>chevron_left</v-icon>
-              </v-btn>
-            </v-card-title>
-          </v-layout>
-        </fallback-image>
-
-        <v-divider></v-divider>
-
-        <v-list dense class="pt-0">
-          <v-list-tile>
-            <v-list-tile-content class="pt-2" :style="{fontSize: '1.4rem'}">
-              {{showDrawerEntityItem.name}}
-            </v-list-tile-content>
-          </v-list-tile>
-          <v-list-tile v-if="showDrawerEntityItem.desc">
-            <v-list-tile-content>{{showDrawerEntityItem.desc}}</v-list-tile-content>
-          </v-list-tile>
-          <v-list-tile>
-            <v-list-tile-content class="pt-4" :style="{fontSize: '1.3rem'}"
-                                 v-if="nearEntities.length !== 0">
-              近くの施設
-            </v-list-tile-content>
-            <v-list-tile-content class="pt-4 d-flex" :style="{alignItems: 'center'}" v-else>
-              <v-btn depressed round color="primary"
-                     @click="fetchNearEntities(showDrawerEntityItem)">
-                近くの施設を読み込む
-              </v-btn>
-            </v-list-tile-content>
-          </v-list-tile>
-          <v-list-tile class="near-entities" v-if="nearEntities.length !== 0">
-            <v-list>
-              <template v-for="(entity, i) in nearEntities">
-                <entity-list-tile @click="openEntityDialog(entity)"
-                                  :entity="entity" :fail-img="dummyImg"
-                                  :key="`${entity.categoryId}:${entity.id}`"/>
-                <v-divider :key="i"></v-divider>
-              </template>
-            </v-list>
-          </v-list-tile>
-        </v-list>
-      </v-navigation-drawer>
-    </div>
+        </v-list-tile>
+      </v-list>
+    </v-navigation-drawer>
   </div>
 </template>
 
 <script>
+import Vue from 'vue';
+
 import { MglGeolocateControl, MglMap, MglMarker, MglNavigationControl, MglPopup } from 'vue-mapbox';
 import FallbackImage from '../components/FallbackImage.vue';
 import EntityListTile from '../components/EntityListTile.vue';
@@ -230,7 +234,7 @@ export default {
           },
         },
       ],
-      dummyImg: '/dummy.png',
+      dummyImg: '/dummy.svg',
       mapbox: {
         token: 'pk.eyJ1Ijoic3l1Y2hhbjEwMDUiLCJhIjoiY2pqMmdlNGkwMHd0aTNxcHF2ZTkwYXh0ZyJ9.Vz7brvQpAt3RbaJ0lqUEyQ',
         style: {
@@ -244,10 +248,10 @@ export default {
         lng: undefined,
       },
       entities: [],
-      colors: ['blue'],
+      colors: ['lightgray', 'red', 'lightgreen', 'lightblue', 'orange'],
       nowMapType: 'day',
       showMap: false,
-      showLoading: true,
+      showControl: false,
       searchText: '',
       showSearchResult: false,
       searchResult: [],
@@ -291,19 +295,7 @@ export default {
       deep: true,
     },
     nowLang(val) {
-      const func = (lang) => {
-        textFields.forEach((v) => {
-          this.$refs.mapView.map.setLayoutProperty(v, 'text-field', ['get', `name_${this.languages[lang].code}`]);
-        });
-      };
-      func(val);
-      this.changeLanguageCB = () => {
-        func(val);
-      };
-    },
-    changeLanguageCB(func) {
-      if (this.changeLanguageCB) this.$refs.mapView.map.off('styledata', this.changeLanguageCB);
-      this.$refs.mapView.map.on('styledata', func);
+      this.changeLanguage(val);
     },
     showEntityDrawer(val) {
       if (!val) this.nearEntities = [];
@@ -317,9 +309,6 @@ export default {
       };
       this.showMap = true;
     },
-    toggleLight() {
-      this.light = !this.light;
-    },
     fetchEntities() {
       this.$http({
         params: {
@@ -331,7 +320,15 @@ export default {
     },
     loadMap() {
       this.fetchEntities();
-      this.showLoading = false;
+      this.$refs.mapView.map.on('styledata', this.changeLanguage);
+    },
+    changeLanguage() {
+      Vue.nextTick(() => {
+        const text = `name_${this.language.code}`;
+        textFields.forEach((v) => {
+          this.$refs.mapView.map.setLayoutProperty(v, 'text-field', ['get', text]);
+        });
+      });
     },
     clickSearchButton() {
       if (this.searchText) {
@@ -354,6 +351,7 @@ export default {
       this.showEntity = true;
     },
     openEntityDrawer(entity) {
+      this.nearEntities = [];
       this.showDrawerEntityItem = entity;
       this.showEntityDrawer = true;
     },
@@ -395,8 +393,9 @@ export default {
 
   @media $display-breakpoints.xs-only {
     .mapboxgl-ctrl-top-right {
-      margin-top: 65px;
-      margin-right: 10px;
+      position fixed;
+      top: 65px;
+      right: 10px;
     }
   }
 </style>
@@ -417,6 +416,7 @@ export default {
   }
 
   .overlay {
+    z-index: 1000;
     background: rgba(0, 0, 0, 0.5);
     position: absolute;
     top: 0;
@@ -449,7 +449,7 @@ export default {
   }
 
   .language-selector {
-    position: absolute;
+    position: fixed;
     top: 15px;
     right: 45px;
 
@@ -457,6 +457,11 @@ export default {
       top: 70px;
       right: 55px;
     }
+  }
+
+  .map-selector {
+    position: fixed;
+    bottom: 50px !important;
   }
 </style>
 
