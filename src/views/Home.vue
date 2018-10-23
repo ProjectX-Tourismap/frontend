@@ -370,9 +370,13 @@ export default {
       this.showEntityDrawer = true;
     },
     goLocation(point) {
-      this.mapCenter = point;
       this.showEntity = false;
       this.showSearchResult = false;
+      this.$refs.mapView.map.flyTo({
+        center: point,
+        zoom: 14,
+        speed: 1.5,
+      });
     },
     fetchNearEntities(entity) {
       this.$http({
