@@ -8,8 +8,8 @@
       <mgl-map
               :accessToken="mapbox.token"
               :mapStyle.sync="mapStyle"
-              :center="[mapCenter.lng,mapCenter.lat]" :zoom="14"
-              @load="loadMap"
+              :center.sync="mapCenter" :zoom.sync="mapZoom"
+              @load="loadMap" @moveend="fetchEntities"
               class="map-view" ref="mapView">
 
         <mgl-navigation-control @added="showControl = true" position="top-right"/>
@@ -17,7 +17,8 @@
         <mgl-marker v-for="entity in entities" :key="entity.id"
                     anchor="top"
                     :coordinates="[entity.geo.lng,entity.geo.lat]"
-                    :color="colors[parseInt(entity.categoryId.substr(0, 2), 10)]">
+                    :color="colors[parseInt(entity.categoryId.substr(0, 2), 10)]"
+                    v-if="mapZoom >= 11">
           <mgl-popup :closeButton="false">
             <v-card :flat="true">
               <div>{{ entity.name }}</div>
@@ -38,6 +39,7 @@
                     append-icon="search"
                     :rules="[(v) => !!v || '']"
                     @click:append="clickSearchButton"
+                    @keyup.native.enter="clickSearchButton"
                     v-show="showControl"
       ></v-text-field>
 
@@ -243,10 +245,12 @@ export default {
           aerial: 'mapbox://styles/syuchan1005/cjnedhbo933d82rsf6hd6nwdx',
         },
       },
+      mapZoom: 14,
       mapCenter: {
-        lat: undefined,
-        lng: undefined,
+        lat: 35.689138,
+        lng: 139.700848,
       },
+      fetchLocations: [],
       entities: [],
       colors: ['lightgray', 'red', 'lightgreen', 'lightblue', 'orange'],
       nowMapType: 'day',
@@ -288,12 +292,6 @@ export default {
     mapStyle() {
       this.$refs.mapView.map.setStyle(this.mapStyle);
     },
-    mapCenter: {
-      handler() {
-        this.fetchEntities();
-      },
-      deep: true,
-    },
     nowLang(val) {
       this.changeLanguage(val);
     },
@@ -302,20 +300,36 @@ export default {
     },
   },
   methods: {
+    hubenyDistance(lat2, lng2) {
+      /* eslint-disable no-mixed-operators */
+      const radLat1 = this.mapCenter.lat * Math.PI / 180;
+      const radLat2 = lat2 * Math.PI / 180;
+      const latAvg = (radLat1 + radLat2) / 2.0;
+      const sinLat = Math.sin(latAvg);
+      const W2 = 1.0 - 0.00669438002301188 * (sinLat * sinLat);
+      const t1 = 6335439.32708317 / (Math.sqrt(W2) * W2) * (radLat1 - radLat2);
+      const t2 = 6378137.0 / Math.sqrt(W2) * Math.cos(latAvg)
+        * ((this.mapCenter.lng * Math.PI / 180) - (lng2 * Math.PI / 180));
+      return Math.sqrt((t1 * t1) + (t2 * t2));
+    },
     setInitGeo(lat, lng) {
       this.mapCenter = {
-        lat: lat || 35.689138,
-        lng: lng || 139.700848,
+        lat: lat || this.mapCenter.lat,
+        lng: lng || this.mapCenter.lng,
       };
       this.showMap = true;
     },
     fetchEntities() {
+      if (this.mapZoom < 14 || this.fetchLocations
+        .some(({ lat, lng }) => Math.abs(this.hubenyDistance(lat, lng)) <= 1000)) return;
+      this.fetchLocations.push({ ...this.mapCenter });
+      const query = `{nearEntitiesInPoint(point:{lat:${this.mapCenter.lat}lng:${this.mapCenter.lng}}distance:4 limit:100){categoryId id name desc picture geo{lat lng}}}`;
       this.$http({
-        params: {
-          query: `{nearEntitiesInPoint(point:{lat:${this.mapCenter.lat} lng:${this.mapCenter.lng}} distance:4 limit:100){categoryId id name desc picture geo{lat lng}}}`,
-        },
-      }).then((response) => {
-        this.entities = response.data.data.nearEntitiesInPoint;
+        params: { query },
+      }).then((res) => {
+        const nearEntities = res.data.data.nearEntitiesInPoint
+          .filter(v => !this.entities.some(c => c.categoryId === v.categoryId && c.id === v.id));
+        this.entities.push(...nearEntities);
       });
     },
     loadMap() {
@@ -373,6 +387,7 @@ export default {
 };
 </script>
 
+<!--suppress CssUnusedSymbol -->
 <style>
   .v-list__tile {
     height: auto !important;
