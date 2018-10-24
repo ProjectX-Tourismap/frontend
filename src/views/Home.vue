@@ -49,7 +49,7 @@
                       v-show="showControl"
         ></v-text-field>
 
-        <v-btn fab large class="directions-button">
+        <v-btn fab large color="white" class="directions-button">
           <v-icon color="#4285F4">directions</v-icon>
         </v-btn>
       </div>
@@ -483,12 +483,13 @@ export default {
     left: 20px;
 
     &.xs {
-      max-width: calc(100% - 40px);
-      min-width: calc(100% - 40px);
-      width: calc(100% - 40px);
+      max-width: calc(100% - 25px);
+      min-width: calc(100% - 25px);
+      width: calc(100% - 25px);
     }
 
     .directions-button {
+      margin-top: 4px;
       width: 44px;
       height: 44px;
     }
