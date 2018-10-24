@@ -17,31 +17,42 @@
         <mgl-marker v-for="entity in entities" :key="entity.id"
                     anchor="top"
                     :coordinates="[entity.geo.lng,entity.geo.lat]"
-                    :color="colors[parseInt(entity.categoryId.substr(0, 2), 10)]"
                     v-if="mapZoom >= 11">
-          <mgl-popup :closeButton="false">
-            <v-card :flat="true">
-              <div>{{ entity.name }}</div>
-              <v-btn block flat small color="primary" @click="openEntityDrawer(entity)">
-                ...more
-              </v-btn>
-            </v-card>
-          </mgl-popup>
+          <template slot="marker">
+            <div style="{max-width:30px;width:30px;height:30px;background:#000;border-radius:50%;}"
+               :style="{background:colors[parseInt(entity.categoryId.substr(0, 2), 10)]}"
+               class="test">
+            </div>
+          </template>
+          <template>
+            <mgl-popup :closeButton="false">
+              <v-card :flat="true">
+                <div>{{ entity.name }}</div>
+                <v-btn block flat small color="primary" @click="openEntityDrawer(entity)">
+                  ...more
+                </v-btn>
+              </v-card>
+            </mgl-popup>
+          </template>
         </mgl-marker>
       </mgl-map>
+      <div class="searchBox" :class="{xs: $vuetify.breakpoint.xsOnly}">
+        <v-text-field v-model="searchText"
+                      solo
+                      type="text"
+                      :label="language.keys.search"
+                      clearable
+                      append-icon="search"
+                      :rules="[(v) => !!v || '']"
+                      @click:append="clickSearchButton"
+                      @keyup.native.enter="clickSearchButton"
+                      v-show="showControl"
+        ></v-text-field>
 
-      <v-text-field class="searchBox" :class="{xs: $vuetify.breakpoint.xsOnly}"
-                    v-model="searchText"
-                    solo
-                    type="text"
-                    :label="language.keys.search"
-                    clearable
-                    append-icon="search"
-                    :rules="[(v) => !!v || '']"
-                    @click:append="clickSearchButton"
-                    @keyup.native.enter="clickSearchButton"
-                    v-show="showControl"
-      ></v-text-field>
+        <v-btn fab large class="directions-button">
+          <v-icon color="#4285F4">directions</v-icon>
+        </v-btn>
+      </div>
 
       <v-menu class="language-selector"
               :class="{xs: $vuetify.breakpoint.xsOnly}" v-show="showControl">
@@ -195,6 +206,8 @@
 import Vue from 'vue';
 
 import { MglGeolocateControl, MglMap, MglMarker, MglNavigationControl, MglPopup } from 'vue-mapbox';
+import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
+import '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions.css';
 import FallbackImage from '../components/FallbackImage.vue';
 import EntityListTile from '../components/EntityListTile.vue';
 
@@ -334,7 +347,15 @@ export default {
     },
     loadMap() {
       this.fetchEntities();
-      this.$refs.mapView.map.on('styledata', this.changeLanguage);
+      const { map } = this.$refs.mapView;
+      map.on('styledata', this.changeLanguage);
+      map.addControl(new MapboxDirections({
+        accessToken: this.mapbox.token,
+        interactive: false,
+        controls: {
+          inputs: false,
+        },
+      }), 'bottom-left');
     },
     changeLanguage() {
       Vue.nextTick(() => {
@@ -453,6 +474,7 @@ export default {
   }
 
   .searchBox {
+    display: flex;
     z-index: 1;
     max-width: 300vw;
     min-width: 450px;
@@ -464,6 +486,11 @@ export default {
       max-width: calc(100% - 40px);
       min-width: calc(100% - 40px);
       width: calc(100% - 40px);
+    }
+
+    .directions-button {
+      width: 44px;
+      height: 44px;
     }
   }
 
