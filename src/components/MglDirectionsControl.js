@@ -86,10 +86,12 @@ export default {
       payload.component.$off('load', this.$_deferredMount);
     },
     setOrigin(location) {
-      this.control.setOrigin([location.lng, location.lat]);
+      if (location) this.control.setOrigin([location.lng, location.lat]);
+      else this.control.removeRoutes();
     },
     setDestination(location) {
-      this.control.setDestination([location.lng, location.lat]);
+      if (location) this.control.setDestination([location.lng, location.lat]);
+      else this.control.removeRoutes();
     },
     setProfile(query) {
       this.control.actions.setProfile(query);

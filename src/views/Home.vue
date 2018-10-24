@@ -7,15 +7,15 @@
     <div v-if="showMap" class="main">
       <mgl-map
               :accessToken="mapbox.token"
-              :mapStyle.sync="mapStyle" @click="a"
+              :mapStyle.sync="mapStyle" @click="clickMap"
               :center.sync="mapCenter" :zoom.sync="mapZoom"
               @load="loadMap" @moveend="fetchEntities"
               class="map-view" ref="mapView">
 
         <mgl-navigation-control @added="showControl = true" position="top-right"/>
         <mgl-directions-control :accessToken="mapbox.token" :interactive="false"
-                                :origin="direction.startLocation"
-                                :destination="direction.destLocation"
+                                :origin="directionStartLocation"
+                                :destination="directionDestLocation"
                                 :profile="direction.profile"
                                 :controls="{
                                   inputs: false,
@@ -24,7 +24,7 @@
                                 }" position="bottom-left"/>
         <mgl-geolocate-control />
 
-        <mgl-marker v-for="entity in entities" :key="entity.id"
+        <mgl-marker v-for="entity in entities" :key="`${entity.categoryId}:${entity.id}`"
                     anchor="top"
                     :coordinates="[entity.geo.lng,entity.geo.lat]"
                     v-if="mapZoom >= 11">
@@ -32,8 +32,7 @@
             <div style="{max-width:30px;width:30px;height:30px;background:#000;border-radius:50%;}"
                :style="{
                  background:colors[parseInt(entity.categoryId.substr(0, 2), 10)] || '#3FB1CE'
-               }"
-               class="test">
+               }" :data-categoryid="entity.categoryId" :data-id="entity.id">
             </div>
           </template>
           <template>
@@ -63,10 +62,17 @@
         ></v-text-field>
 
         <v-card v-else class="directions-card">
-          <v-text-field v-model="direction.start" class="start-text"
-                        :label="language.keys.start" prepend-icon="my_location" required />
-          <v-text-field v-model="direction.dest" class="dest-text"
-                        :label="language.keys.dest" prepend-icon="location_on" required />
+          <!-- TODO 検索機能をつける -->
+          <v-text-field class="start-text" readonly
+                        :value="direction.start && (direction.start.name ? direction.start.name :
+                          `${direction.start.lat}, ${direction.start.lng}`)"
+                        :placeholder="language.keys.start" prepend-icon="my_location" clearable
+                        @clear-icon-cb="direction.start = undefined" />
+          <v-text-field class="dest-text" readonly
+                        :value="direction.dest && (direction.dest.name ? direction.dest.name :
+                          `${direction.dest.lat}, ${direction.dest.lng}`)"
+                        :placeholder="language.keys.dest" prepend-icon="location_on" clearable
+                        @clear-icon-cb="direction.dest = undefined" />
           <v-btn flat icon class="reverse-btn" @click="directionReverse">
             <v-icon medium style="transform:rotate(90deg)">compare_arrows</v-icon>
           </v-btn>
@@ -81,7 +87,9 @@
 
         <v-btn fab large v-show="showControl" @click="isDirection = !isDirection"
           color="white" class="directions-button">
-          <v-icon color="#4285F4">{{isDirection ? 'youtube_searched_for' : 'directions'}}</v-icon>
+          <v-icon :color="isDirection ? '#000' : '#4285F4'">
+            {{isDirection ? 'clear' : 'directions'}}
+          </v-icon>
         </v-btn>
       </div>
 
@@ -271,7 +279,7 @@ export default {
           name: 'Japanese',
           keys: {
             search: '検索...',
-            start: '出発地を入力...',
+            start: '地図をクリック', // 出発地を入力するか
             dest: '目的地を入力...',
           },
         }, {
@@ -279,8 +287,8 @@ export default {
           name: 'English',
           keys: {
             search: 'Search...',
-            start: 'Enter starting place',
-            dest: 'Enter destination',
+            start: 'click on the map...', // Choose starting point, or
+            dest: 'Choose destination',
           },
         },
       ],
@@ -317,8 +325,8 @@ export default {
       showLayerDial: false,
       isDirection: false,
       direction: {
-        start: '',
-        dest: '',
+        start: undefined,
+        dest: undefined,
         startLocation: { lat: undefined, lng: undefined },
         destLocation: { lat: undefined, lng: undefined },
         profile: 'mapbox/driving',
@@ -342,6 +350,12 @@ export default {
     },
     language() {
       return this.languages[this.nowLang];
+    },
+    directionStartLocation() {
+      return this.direction.start ? (this.direction.start.geo || this.direction.start) : undefined;
+    },
+    directionDestLocation() {
+      return this.direction.dest ? (this.direction.dest.geo || this.direction.dest) : undefined;
     },
   },
   watch: {
@@ -447,13 +461,32 @@ export default {
         this.nearEntities = response.data.data.nearEntitiesInPoint.slice(1);
       });
     },
+    getEntity(categoryId, id) {
+      return (categoryId && id) ?
+        this.entities.find(e => e.categoryId === categoryId && e.id === id) : undefined;
+    },
     directionReverse() {
       this.direction = {
+        ...this.direction,
         start: this.direction.dest,
         dest: this.direction.start,
         startLocation: this.direction.destLocation,
         destLocation: this.direction.startLocation,
       };
+    },
+    clickMap(event) {
+      if (this.isDirection) {
+        let element = document.elementFromPoint(event.point.x, event.point.y);
+        element = this.getEntity(element.dataset.categoryid, element.dataset.id);
+        if (!this.direction.start) {
+          this.direction.start = element || event.lngLat;
+        } else if (!this.direction.dest) {
+          this.direction.dest = element || event.lngLat;
+        } else {
+          return;
+        }
+        event.preventDefault();
+      }
     },
   },
 };
@@ -528,6 +561,11 @@ export default {
     position: fixed;
     top: 20px;
     left: 20px;
+    pointer-events: none;
+
+    & > * {
+      pointer-events: auto;
+    }
 
     &.xs {
       max-width: calc(100% - 25px);
