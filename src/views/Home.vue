@@ -7,12 +7,22 @@
     <div v-if="showMap" class="main">
       <mgl-map
               :accessToken="mapbox.token"
-              :mapStyle.sync="mapStyle"
+              :mapStyle.sync="mapStyle" @click="a"
               :center.sync="mapCenter" :zoom.sync="mapZoom"
               @load="loadMap" @moveend="fetchEntities"
               class="map-view" ref="mapView">
 
         <mgl-navigation-control @added="showControl = true" position="top-right"/>
+        <mgl-directions-control :accessToken="mapbox.token" :interactive="false"
+                                :origin="direction.startLocation"
+                                :destination="direction.destLocation"
+                                :profile="direction.profile"
+                                :controls="{
+                                  inputs: false,
+                                  instructions: false,
+                                  profileSwitcher: false,
+                                }" position="bottom-left"/>
+        <mgl-geolocate-control />
 
         <mgl-marker v-for="entity in entities" :key="entity.id"
                     anchor="top"
@@ -49,19 +59,37 @@
                       @click:append="clickSearchButton"
                       @keyup.native.enter="clickSearchButton"
                       v-show="showControl"
+                      v-if="!isDirection"
         ></v-text-field>
 
-        <v-btn fab large v-show="showControl"
+        <v-card v-else class="directions-card">
+          <v-text-field v-model="direction.start" class="start-text"
+                        :label="language.keys.start" prepend-icon="my_location" required />
+          <v-text-field v-model="direction.dest" class="dest-text"
+                        :label="language.keys.dest" prepend-icon="location_on" required />
+          <v-btn flat icon class="reverse-btn" @click="directionReverse">
+            <v-icon medium style="transform:rotate(90deg)">compare_arrows</v-icon>
+          </v-btn>
+          <v-btn-toggle v-model="direction.profile" :mandatory="true"
+                        class="profiles" :class="{xs: $vuetify.breakpoint.xsOnly}">
+            <v-btn flat value="mapbox/driving-traffic"><v-icon>directions_car</v-icon></v-btn>
+            <v-btn flat value="mapbox/driving"><v-icon>directions_car</v-icon>(highway)</v-btn>
+            <v-btn flat value="mapbox/cycling"><v-icon>directions_bike</v-icon></v-btn>
+            <v-btn flat value="mapbox/walking"><v-icon>directions_walk</v-icon></v-btn>
+          </v-btn-toggle>
+        </v-card>
+
+        <v-btn fab large v-show="showControl" @click="isDirection = !isDirection"
           color="white" class="directions-button">
-          <v-icon color="#4285F4">directions</v-icon>
+          <v-icon color="#4285F4">{{isDirection ? 'youtube_searched_for' : 'directions'}}</v-icon>
         </v-btn>
       </div>
 
       <v-menu class="language-selector"
-              :class="{xs: $vuetify.breakpoint.xsOnly}" v-show="showControl">
+              :class="{xs: $vuetify.breakpoint.width <= 720}" v-show="showControl">
         <v-btn color="white" slot="activator">
           <v-icon left dark>language</v-icon>
-          {{language[$vuetify.breakpoint.xsOnly ? 'code' : 'name']}}
+          {{language[($vuetify.breakpoint.width > 500) ? 'name' : 'code']}}
         </v-btn>
         <v-list>
           <v-list-tile v-for="(lang, index) in languages" :key="index" @click="nowLang = index">
@@ -209,8 +237,7 @@
 import Vue from 'vue';
 
 import { MglGeolocateControl, MglMap, MglMarker, MglNavigationControl, MglPopup } from 'vue-mapbox';
-import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
-import '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions.css';
+import MglDirectionsControl from '../components/MglDirectionsControl';
 import FallbackImage from '../components/FallbackImage.vue';
 import EntityListTile from '../components/EntityListTile.vue';
 
@@ -230,6 +257,7 @@ export default {
     MglNavigationControl,
     MglMarker,
     MglPopup,
+    MglDirectionsControl,
     FallbackImage,
     EntityListTile,
   },
@@ -243,12 +271,16 @@ export default {
           name: 'Japanese',
           keys: {
             search: '検索...',
+            start: '出発地を入力...',
+            dest: '目的地を入力...',
           },
         }, {
           code: 'en',
           name: 'English',
           keys: {
             search: 'Search...',
+            start: 'Enter starting place',
+            dest: 'Enter destination',
           },
         },
       ],
@@ -283,6 +315,14 @@ export default {
       showNoResult: false,
       changeLanguageCB: undefined,
       showLayerDial: false,
+      isDirection: false,
+      direction: {
+        start: '',
+        dest: '',
+        startLocation: { lat: undefined, lng: undefined },
+        destLocation: { lat: undefined, lng: undefined },
+        profile: 'mapbox/driving',
+      },
     };
   },
   mounted() {
@@ -316,6 +356,9 @@ export default {
     },
   },
   methods: {
+    a(...v) {
+      console.log(...v);
+    },
     hubenyDistance(lat2, lng2) {
       /* eslint-disable no-mixed-operators */
       const radLat1 = this.mapCenter.lat * Math.PI / 180;
@@ -352,13 +395,6 @@ export default {
       this.fetchEntities();
       const { map } = this.$refs.mapView;
       map.on('styledata', this.changeLanguage);
-      map.addControl(new MapboxDirections({
-        accessToken: this.mapbox.token,
-        interactive: false,
-        controls: {
-          inputs: false,
-        },
-      }), 'bottom-left');
     },
     changeLanguage() {
       Vue.nextTick(() => {
@@ -410,6 +446,14 @@ export default {
       }).then((response) => {
         this.nearEntities = response.data.data.nearEntitiesInPoint.slice(1);
       });
+    },
+    directionReverse() {
+      this.direction = {
+        start: this.direction.dest,
+        dest: this.direction.start,
+        startLocation: this.direction.destLocation,
+        destLocation: this.direction.startLocation,
+      };
     },
   },
 };
@@ -517,6 +561,41 @@ export default {
   .map-selector {
     position: fixed;
     bottom: 50px !important;
+  }
+
+  .directions-card {
+    width: 100%;
+    padding-left: 10px;
+    display: grid;
+    grid-template-rows: 64px 64px 40px;
+    grid-template-columns: 1fr 40px;
+
+    .start-text {
+      grid-row: 1 / 2;
+      grid-column: 1 / 2;
+    }
+
+    .dest-text {
+      grid-row: 2 / 3;
+      grid-column: 1 / 2;
+    }
+
+    .reverse-btn {
+      margin: auto;
+      grid-row: 1 / 3;
+      grid-column: 2 / 3;
+    }
+
+    .profiles {
+      grid-row: 3 / 4;
+      grid-column: 1 / 2;
+      box-shadow: none;
+      justify-content: space-around;
+
+      &.xs {
+        grid-column: 1 / 3;
+      }
+    }
   }
 </style>
 
