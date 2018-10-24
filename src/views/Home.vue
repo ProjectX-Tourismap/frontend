@@ -20,7 +20,9 @@
                     v-if="mapZoom >= 11">
           <template slot="marker">
             <div style="{max-width:30px;width:30px;height:30px;background:#000;border-radius:50%;}"
-               :style="{background:colors[parseInt(entity.categoryId.substr(0, 2), 10)]}"
+               :style="{
+                 background:colors[parseInt(entity.categoryId.substr(0, 2), 10)] || '#3FB1CE'
+               }"
                class="test">
             </div>
           </template>
@@ -49,7 +51,8 @@
                       v-show="showControl"
         ></v-text-field>
 
-        <v-btn fab large color="white" class="directions-button">
+        <v-btn fab large v-show="showControl"
+          color="white" class="directions-button">
           <v-icon color="#4285F4">directions</v-icon>
         </v-btn>
       </div>
