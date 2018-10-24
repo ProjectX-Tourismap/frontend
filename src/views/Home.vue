@@ -58,7 +58,7 @@
               :class="{xs: $vuetify.breakpoint.xsOnly}" v-show="showControl">
         <v-btn color="white" slot="activator">
           <v-icon left dark>language</v-icon>
-          {{language.name}}
+          {{language[$vuetify.breakpoint.xsOnly ? 'code' : 'name']}}
         </v-btn>
         <v-list>
           <v-list-tile v-for="(lang, index) in languages" :key="index" @click="nowLang = index">
@@ -476,8 +476,8 @@ export default {
   .searchBox {
     display: flex;
     z-index: 1;
-    max-width: 300vw;
-    min-width: 450px;
+    max-width: 350vw;
+    min-width: 500px;
     position: fixed;
     top: 20px;
     left: 20px;
@@ -496,13 +496,18 @@ export default {
   }
 
   .language-selector {
+    z-index: 4;
+    max-width: 155px;
+    max-height: 48px;
     position: fixed;
     top: 15px;
     right: 45px;
 
     &.xs {
-      top: 70px;
-      right: 55px;
+      top: auto;
+      right: auto;
+      bottom: 15px;
+      left: 15px;
     }
   }
 
