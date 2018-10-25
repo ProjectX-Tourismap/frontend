@@ -33,6 +33,12 @@
         <v-icon>{{ light?'cloud':'wb_sunny' }}</v-icon>
       </v-btn>
     </div>
+      <v-text-field
+              :append-icon="marker ? 'mdi-map-marker' : 'mdi-map-marker-off'"
+              label="Solo"
+              placeholder="Placeholder"
+              solo
+      ></v-text-field>
   </v-container>
 </template>
 
