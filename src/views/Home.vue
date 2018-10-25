@@ -106,25 +106,26 @@
         </v-list>
       </v-menu>
 
-      <v-speed-dial v-model="showLayerDial" fab absolute bottom right v-show="showControl"
-                    transition="slide-y-reverse-transition" class="map-selector">
-        <v-btn slot="activator" v-model="showLayerDial" dark fab>
-          <v-icon>layers</v-icon>
-          <v-icon>close</v-icon>
-        </v-btn>
+      <v-btn dark fab absolute bottom right class="map-selector"
+             @click="showLayerDial = true" v-show="showControl">
+        <v-icon>layers</v-icon>
+      </v-btn>
 
-        <v-btn fab small color="white" @click="nowMapType = 'aerial'">
-          <v-icon>local_airport</v-icon>
-        </v-btn>
+      <v-bottom-sheet v-model="showLayerDial">
+        <v-card tile>
+          <v-btn fab small color="white" @click="nowMapType = 'aerial'">
+            <v-icon>local_airport</v-icon>
+          </v-btn>
 
-        <v-btn fab dark small color="lightgray" @click="nowMapType = 'night'">
-          <v-icon>wb_cloudy</v-icon>
-        </v-btn>
+          <v-btn fab dark small color="lightgray" @click="nowMapType = 'night'">
+            <v-icon>wb_cloudy</v-icon>
+          </v-btn>
 
-        <v-btn fab small color="white" @click="nowMapType = 'day'">
-          <v-icon>wb_sunny</v-icon>
-        </v-btn>
-      </v-speed-dial>
+          <v-btn fab small color="white" @click="nowMapType = 'day'">
+            <v-icon>wb_sunny</v-icon>
+          </v-btn>
+        </v-card>
+      </v-bottom-sheet>
     </div>
 
     <v-dialog v-model="showSearchResult"
@@ -586,7 +587,7 @@ export default {
   }
 
   .language-selector {
-    z-index: 4;
+    z-index: 2;
     max-width: 155px;
     max-height: 48px;
     position: fixed;
@@ -602,8 +603,9 @@ export default {
   }
 
   .map-selector {
+    z-index: 2;
     position: fixed;
-    bottom: 50px !important;
+    bottom: 30px !important;
   }
 
   .directions-card {
