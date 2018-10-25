@@ -62,7 +62,6 @@
         ></v-text-field>
 
         <v-card v-else class="directions-card">
-          <!-- TODO 検索機能をつける -->
           <v-text-field class="start-text" readonly
                         :value="direction.start && (direction.start.name ? direction.start.name :
                           `${direction.start.lat}, ${direction.start.lng}`)"
@@ -107,23 +106,19 @@
       </v-menu>
 
       <v-btn dark fab absolute bottom right class="map-selector"
-             @click="showLayerDial = true" v-show="showControl">
+             @click="showMapStylePane = true" v-show="showControl">
         <v-icon>layers</v-icon>
       </v-btn>
 
-      <v-bottom-sheet v-model="showLayerDial">
-        <v-card tile>
-          <v-btn fab small color="white" @click="nowMapType = 'aerial'">
-            <v-icon>local_airport</v-icon>
-          </v-btn>
-
-          <v-btn fab dark small color="lightgray" @click="nowMapType = 'night'">
-            <v-icon>wb_cloudy</v-icon>
-          </v-btn>
-
-          <v-btn fab small color="white" @click="nowMapType = 'day'">
-            <v-icon>wb_sunny</v-icon>
-          </v-btn>
+      <v-bottom-sheet v-model="showMapStylePane">
+        <v-card tile class="map-selector-pane">
+          <template v-for="name in Object.keys(mapbox.style)">
+            <v-hover :key="name">
+              <v-img slot-scope="{ hover }" :class="`elevation-${hover ? 5 : 2}`" aspect-ratio="1"
+                     :src="`img/maps/${name}.png`"
+                     @click="()=>{nowMapType = name;showMapStylePane = false}"/>
+            </v-hover>
+          </template>
         </v-card>
       </v-bottom-sheet>
     </div>
@@ -323,7 +318,7 @@ export default {
       nearEntities: [],
       showNoResult: false,
       changeLanguageCB: undefined,
-      showLayerDial: false,
+      showMapStylePane: false,
       isDirection: false,
       direction: {
         start: undefined,
@@ -606,6 +601,18 @@ export default {
     z-index: 2;
     position: fixed;
     bottom: 30px !important;
+  }
+
+  .map-selector-pane {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 20px 0;
+    justify-content: space-around;
+
+    > .v-image {
+      width: 100px;
+      max-width: 100px;
+    }
   }
 
   .directions-card {
