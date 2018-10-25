@@ -10,6 +10,65 @@ export default {
       type: String,
       default: 'top-left',
     },
+    styles: {
+      type: Array,
+      default: () => [
+        {
+          id: 'directions-origin-point',
+          type: 'circle',
+          source: 'directions',
+          paint: {
+            'circle-radius': 8,
+            'circle-color': '#FFFFFF',
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#000000',
+          },
+          filter: [
+            'all',
+            ['in', '$type', 'Point'],
+            ['in', 'marker-symbol', 'A'],
+          ],
+        },
+        {
+          id: 'directions-origin-label',
+          type: 'symbol',
+          source: 'directions',
+          visibility: 'none',
+          filter: [
+            'all',
+            ['in', '$type', 'Point'],
+            ['in', 'marker-symbol', 'A'],
+          ],
+        },
+        {
+          id: 'directions-destination-point',
+          type: 'circle',
+          source: 'directions',
+          paint: {
+            'circle-radius': 8,
+            'circle-color': '#FFFFFF',
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#000000',
+          },
+          filter: [
+            'all',
+            ['in', '$type', 'Point'],
+            ['in', 'marker-symbol', 'B'],
+          ],
+        },
+        {
+          id: 'directions-destination-label',
+          type: 'symbol',
+          source: 'directions',
+          visibility: 'none',
+          filter: [
+            'all',
+            ['in', '$type', 'Point'],
+            ['in', 'marker-symbol', 'B'],
+          ],
+        },
+      ],
+    },
     accessToken: {
       type: String,
       default: null,

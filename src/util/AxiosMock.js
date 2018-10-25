@@ -7,7 +7,7 @@ const nearEntitiesInPointMockData = {"mock": true, "data":{"nearEntitiesInPoint"
 
 if (process.env.NODE_ENV !== 'production') {
   /* eslint-disable-next-line */
-  console.info('Now use AxiosMock!');
+  console.info('%cNow use AxiosMock!', 'color: red;');
   const mock = new AxiosMock(axios);
 
   mock.onGet().reply((config) => {
