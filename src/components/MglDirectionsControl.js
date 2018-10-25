@@ -1,7 +1,6 @@
 import baseMixin from 'vue-mapbox/src/lib/mixin';
 import controlMixin from 'vue-mapbox/src/lib/controlMixin';
 import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
-import '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions.css';
 
 export default {
   name: 'DirectionControl',

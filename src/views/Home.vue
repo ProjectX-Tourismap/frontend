@@ -67,12 +67,12 @@
                         :value="direction.start && (direction.start.name ? direction.start.name :
                           `${direction.start.lat}, ${direction.start.lng}`)"
                         :placeholder="language.keys.start" prepend-icon="my_location" clearable
-                        @clear-icon-cb="direction.start = undefined" />
+                        @click:clear="direction.start = undefined" />
           <v-text-field class="dest-text" readonly
                         :value="direction.dest && (direction.dest.name ? direction.dest.name :
                           `${direction.dest.lat}, ${direction.dest.lng}`)"
                         :placeholder="language.keys.dest" prepend-icon="location_on" clearable
-                        @clear-icon-cb="direction.dest = undefined" />
+                        @click:clear="direction.dest = undefined" />
           <v-btn flat icon class="reverse-btn" @click="directionReverse">
             <v-icon medium style="transform:rotate(90deg)">compare_arrows</v-icon>
           </v-btn>
@@ -327,8 +327,6 @@ export default {
       direction: {
         start: undefined,
         dest: undefined,
-        startLocation: { lat: undefined, lng: undefined },
-        destLocation: { lat: undefined, lng: undefined },
         profile: 'mapbox/driving',
       },
     };
@@ -352,10 +350,16 @@ export default {
       return this.languages[this.nowLang];
     },
     directionStartLocation() {
-      return this.direction.start ? (this.direction.start.geo || this.direction.start) : undefined;
+      if (this.isDirection && this.direction.start) {
+        return this.direction.start.geo || this.direction.start;
+      }
+      return undefined;
     },
     directionDestLocation() {
-      return this.direction.dest ? (this.direction.dest.geo || this.direction.dest) : undefined;
+      if (this.isDirection && this.direction.dest) {
+        return this.direction.dest.geo || this.direction.dest;
+      }
+      return undefined;
     },
   },
   watch: {
@@ -371,6 +375,7 @@ export default {
   },
   methods: {
     a(...v) {
+      /* eslint-disable */
       console.log(...v);
     },
     hubenyDistance(lat2, lng2) {
