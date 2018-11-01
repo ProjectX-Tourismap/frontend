@@ -248,15 +248,6 @@ import MglDirectionsControl from '../components/MglDirectionsControl';
 import FallbackImage from '../components/FallbackImage.vue';
 import EntityListTile from '../components/EntityListTile.vue';
 
-const textFields = ['country-label-lg', 'country-label-md', 'country-label-sm',
-  'state-label-lg', 'state-label-md', 'state-label-sm',
-  'place-city-lg-n', 'place-city-lg-s', 'place-city-md-n', 'place-city-md-s', 'place-city-sm',
-  'place-island', 'place-town', 'place-village', 'place-hamlet', 'place-suburb',
-  'place-neighbourhood', 'place-islet-archipelago-aboriginal',
-  'airport-label', 'poi-scalerank1', 'poi-scalerank2', 'poi-scalerank3',
-  'rail-label-major', 'rail-label-minor',
-  'road-label-large', 'road-label-medium', 'road-label-small'];
-
 export default {
   components: {
     MglMap,
@@ -418,9 +409,19 @@ export default {
     },
     changeLanguage() {
       Vue.nextTick(() => {
-        const text = `name_${this.language.code}`;
-        textFields.forEach((v) => {
-          this.$refs.mapView.map.setLayoutProperty(v, 'text-field', ['get', text]);
+        const text = this.language.code ? `{name_${this.language.code}}` : '{name}';
+        this.$refs.mapView.map.getStyle().layers
+          .filter(v => v.layout && v.layout.hasOwnProperty('text-field') && v.layout['text-field'] !== '{ref}')
+          .forEach((v) => {
+          if (typeof v.layout['text-field'] === 'string') {
+            this.$refs.mapView.map.setLayoutProperty(v.id, 'text-field', text);
+          } else if (v.layout['text-field'].stops) {
+            const stops = [...v.layout['text-field'].stops].map(v => {
+              if (v[1].match(/{name(_\w{2})?}/)) v[1] = text;
+              return v;
+            });
+            this.$refs.mapView.map.setLayoutProperty(v.id, 'text-field', { ...v.layout['text-field'], stops });
+          }
         });
       });
     },
