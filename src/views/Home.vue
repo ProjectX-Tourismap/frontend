@@ -34,7 +34,7 @@
           <template slot="marker">
             <div style="{max-width:30px;width:30px;height:30px;background:#000;border-radius:50%;}"
                :style="{
-                 background:colors[parseInt(entity.categoryId.substr(0, 2), 10)] || '#3FB1CE'
+                 background:colors[parseInt(entity.genreCode.substr(0, 2), 10)] || '#3FB1CE'
                }" :data-categoryid="entity.categoryId" :data-id="entity.id">
             </div>
           </template>
@@ -392,7 +392,7 @@ export default {
       if (this.mapZoom < 14 || this.fetchLocations
         .some(({ lat, lng }) => Math.abs(this.hubenyDistance(lat, lng)) <= 1000)) return;
       this.fetchLocations.push({ ...this.mapCenter });
-      const query = `{nearEntitiesInPoint(point:{lat:${this.mapCenter.lat}lng:${this.mapCenter.lng}}distance:4 limit:100){categoryId id name desc picture geo{lat lng}}}`;
+      const query = `{nearEntitiesInPoint(point:{lat:${this.mapCenter.lat}lng:${this.mapCenter.lng}}distance:4 limit:100){genreCode categoryId id name desc picture geo{lat lng}}}`;
       this.$http({
         params: { query },
       }).then((res) => {
@@ -429,7 +429,7 @@ export default {
       if (this.searchText) {
         this.$http({
           params: {
-            query: `{searchEntities(name:"${this.searchText}"){categoryId id name desc picture geo{lat lng}}}`,
+            query: `{searchEntities(name:"${this.searchText}"){genreCode categoryId id name desc picture geo{lat lng}}}`,
           },
         }).then((res) => {
           this.searchResult = res.data.data.searchEntities;
