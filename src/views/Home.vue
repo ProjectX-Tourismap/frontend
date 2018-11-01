@@ -9,7 +9,10 @@
               :accessToken="mapbox.token"
               :mapStyle.sync="mapStyle" @click="clickMap"
               :center.sync="mapCenter" :zoom.sync="mapZoom"
-              @load="loadMap" @moveend="fetchEntities"
+              @load="loadMap" @moveend="() => {
+                this.fetchEntities();
+                this.mapBounds = $refs.mapView.map.getBounds();
+              }"
               class="map-view" ref="mapView">
 
         <mgl-navigation-control @added="showControl = true" position="top-right"/>
@@ -27,11 +30,11 @@
         <mgl-marker v-for="entity in entities" :key="`${entity.categoryId}:${entity.id}`"
                     anchor="top"
                     :coordinates="[entity.geo.lng,entity.geo.lat]"
-                    v-if="mapZoom >= 11">
+                    v-if="mapZoom >= 11 && inMapBounds(entity)">
           <template slot="marker">
             <div style="{max-width:30px;width:30px;height:30px;background:#000;border-radius:50%;}"
                :style="{
-                 background:colors[parseInt(entity.categoryId.substr(0, 2), 10)] || '#3FB1CE'
+                 background:colors[parseInt(entity.genreCode.substr(0, 2), 10)] || '#3FB1CE'
                }" :data-categoryid="entity.categoryId" :data-id="entity.id">
             </div>
           </template>
@@ -188,7 +191,7 @@
       </v-card>
     </v-dialog>
 
-    <v-navigation-drawer v-model="showEntityDrawer" absolute right stateless touchless>
+    <v-navigation-drawer v-model="showEntityDrawer" absolute right touchless>
       <fallback-image :src="showDrawerEntityItem.picture" :fall-src="dummyImg" class="pt-0">
         <v-layout column fill-height>
           <v-card-title>
@@ -245,15 +248,6 @@ import MglDirectionsControl from '../components/MglDirectionsControl';
 import FallbackImage from '../components/FallbackImage.vue';
 import EntityListTile from '../components/EntityListTile.vue';
 
-const textFields = ['country-label-lg', 'country-label-md', 'country-label-sm',
-  'state-label-lg', 'state-label-md', 'state-label-sm',
-  'place-city-lg-n', 'place-city-lg-s', 'place-city-md-n', 'place-city-md-s', 'place-city-sm',
-  'place-island', 'place-town', 'place-village', 'place-hamlet', 'place-suburb',
-  'place-neighbourhood', 'place-islet-archipelago-aboriginal',
-  'airport-label', 'poi-scalerank1', 'poi-scalerank2', 'poi-scalerank3',
-  'rail-label-major', 'rail-label-minor',
-  'road-label-large', 'road-label-medium', 'road-label-small'];
-
 export default {
   components: {
     MglMap,
@@ -297,6 +291,7 @@ export default {
           aerial: 'mapbox://styles/syuchan1005/cjnedhbo933d82rsf6hd6nwdx',
         },
       },
+      mapBounds: undefined,
       mapZoom: 14,
       mapCenter: {
         lat: 35.689138,
@@ -397,7 +392,7 @@ export default {
       if (this.mapZoom < 14 || this.fetchLocations
         .some(({ lat, lng }) => Math.abs(this.hubenyDistance(lat, lng)) <= 1000)) return;
       this.fetchLocations.push({ ...this.mapCenter });
-      const query = `{nearEntitiesInPoint(point:{lat:${this.mapCenter.lat}lng:${this.mapCenter.lng}}distance:4 limit:100){categoryId id name desc picture geo{lat lng}}}`;
+      const query = `{nearEntitiesInPoint(point:{lat:${this.mapCenter.lat}lng:${this.mapCenter.lng}}distance:4 limit:100){genreCode categoryId id name desc picture geo{lat lng}}}`;
       this.$http({
         params: { query },
       }).then((res) => {
@@ -410,12 +405,23 @@ export default {
       this.fetchEntities();
       const { map } = this.$refs.mapView;
       map.on('styledata', this.changeLanguage);
+      this.mapBounds = map.getBounds();
     },
     changeLanguage() {
       Vue.nextTick(() => {
-        const text = `name_${this.language.code}`;
-        textFields.forEach((v) => {
-          this.$refs.mapView.map.setLayoutProperty(v, 'text-field', ['get', text]);
+        const text = this.language.code ? `{name_${this.language.code}}` : '{name}';
+        this.$refs.mapView.map.getStyle().layers
+          .filter(v => v.layout && v.layout.hasOwnProperty('text-field') && v.layout['text-field'] !== '{ref}')
+          .forEach((v) => {
+          if (typeof v.layout['text-field'] === 'string') {
+            this.$refs.mapView.map.setLayoutProperty(v.id, 'text-field', text);
+          } else if (v.layout['text-field'].stops) {
+            const stops = [...v.layout['text-field'].stops].map(v => {
+              if (v[1].match(/{name(_\w{2})?}/)) v[1] = text;
+              return v;
+            });
+            this.$refs.mapView.map.setLayoutProperty(v.id, 'text-field', { ...v.layout['text-field'], stops });
+          }
         });
       });
     },
@@ -423,7 +429,7 @@ export default {
       if (this.searchText) {
         this.$http({
           params: {
-            query: `{searchEntities(name:"${this.searchText}"){categoryId id name desc picture geo{lat lng}}}`,
+            query: `{searchEntities(name:"${this.searchText}"){genreCode categoryId id name desc picture geo{lat lng}}}`,
           },
         }).then((res) => {
           this.searchResult = res.data.data.searchEntities;
@@ -489,6 +495,11 @@ export default {
         event.preventDefault();
       }
     },
+    inMapBounds(entity) {
+      if (!this.mapBounds) return false;
+      return (this.mapBounds._ne.lat >= entity.geo.lat && entity.geo.lat >= this.mapBounds._sw.lat) &&
+        (this.mapBounds._ne.lng >= entity.geo.lng && entity.geo.lng >= this.mapBounds._sw.lng);
+    }
   },
 };
 </script>

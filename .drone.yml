@@ -7,9 +7,9 @@ pipeline:
     volumes:
       - /tmp/cache:/cache
   build:
-    image: node:9-alpine
+    image: node:10-alpine
     commands:
-      - npm install
+      - npm ci
       - npm run build
   rebuild-cache:
     image: drillster/drone-volume-cache
@@ -26,10 +26,11 @@ pipeline:
       status: [ success, failure ]
     template: >
       {{#success build.status}}
-        build {{build.number}} succeeded. Good job. (CommitID: {{build.commit}})
+        build {{build.number}} succeeded. Good job.
       {{else}}
-        build {{build.number}} failed. Fix me please. (CommitID: {{build.commit}})
+        build {{build.number}} failed. Fix me please.
       {{/success}}
+      CommitID: {{build.commit}}
       URL: https://drone.syuchan.work/{{repo.owner}}/{{repo.name}}/{{build.number}}
   scp:
     image: appleboy/drone-scp
