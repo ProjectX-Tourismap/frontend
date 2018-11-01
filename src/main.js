@@ -1,10 +1,10 @@
 import Vue from 'vue';
-import axios from 'axios';
 import VueMapbox from 'vue-mapbox';
 import Mapbox from 'mapbox-gl';
 import { BallBeatLoader } from 'vue-loaders';
 
 import 'vue-loaders/dist/vue-loaders.css';
+import axios from './util/AxiosMock';
 import './plugins/vuetify';
 import App from './App.vue';
 import router from './router';

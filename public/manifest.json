@@ -1,0 +1,10 @@
+{
+  "name": "Tourismap",
+  "short_name": "Tourismap",
+  "description": "Tourismap - Frontend",
+  "start_url": "/index.html",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
+  "display": "standalone",
+  "orientation": "portrait"
+}
