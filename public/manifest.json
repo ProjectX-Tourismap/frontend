@@ -5,6 +5,6 @@
   "start_url": "/index.html",
   "background_color": "#FFFFFF",
   "theme_color": "#FFFFFF",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "portrait"
 }

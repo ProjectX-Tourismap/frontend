@@ -191,7 +191,7 @@
       </v-card>
     </v-dialog>
 
-    <v-navigation-drawer v-model="showEntityDrawer" absolute right stateless touchless>
+    <v-navigation-drawer v-model="showEntityDrawer" absolute right touchless>
       <fallback-image :src="showDrawerEntityItem.picture" :fall-src="dummyImg" class="pt-0">
         <v-layout column fill-height>
           <v-card-title>
