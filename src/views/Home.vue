@@ -9,7 +9,10 @@
               :accessToken="mapbox.token"
               :mapStyle.sync="mapStyle" @click="clickMap"
               :center.sync="mapCenter" :zoom.sync="mapZoom"
-              @load="loadMap" @moveend="fetchEntities"
+              @load="loadMap" @moveend="() => {
+                this.fetchEntities();
+                this.mapBounds = $refs.mapView.map.getBounds();
+              }"
               class="map-view" ref="mapView">
 
         <mgl-navigation-control @added="showControl = true" position="top-right"/>
@@ -27,7 +30,7 @@
         <mgl-marker v-for="entity in entities" :key="`${entity.categoryId}:${entity.id}`"
                     anchor="top"
                     :coordinates="[entity.geo.lng,entity.geo.lat]"
-                    v-if="mapZoom >= 11">
+                    v-if="mapZoom >= 11 && inMapBounds(entity)">
           <template slot="marker">
             <div style="{max-width:30px;width:30px;height:30px;background:#000;border-radius:50%;}"
                :style="{
@@ -297,6 +300,7 @@ export default {
           aerial: 'mapbox://styles/syuchan1005/cjnedhbo933d82rsf6hd6nwdx',
         },
       },
+      mapBounds: undefined,
       mapZoom: 14,
       mapCenter: {
         lat: 35.689138,
@@ -410,6 +414,7 @@ export default {
       this.fetchEntities();
       const { map } = this.$refs.mapView;
       map.on('styledata', this.changeLanguage);
+      this.mapBounds = map.getBounds();
     },
     changeLanguage() {
       Vue.nextTick(() => {
@@ -489,6 +494,11 @@ export default {
         event.preventDefault();
       }
     },
+    inMapBounds(entity) {
+      if (!this.mapBounds) return false;
+      return (this.mapBounds._ne.lat >= entity.geo.lat && entity.geo.lat >= this.mapBounds._sw.lat) &&
+        (this.mapBounds._ne.lng >= entity.geo.lng && entity.geo.lng >= this.mapBounds._sw.lng);
+    }
   },
 };
 </script>
