@@ -144,20 +144,22 @@ export default {
       payload.component.$off('load', this.$_deferredMount);
     },
     setOrigin(location) {
+      this.control.removeRoutes();
       if (location) {
         this.control.setOrigin([location.lng, location.lat]);
-        if (this.destination) {
-          this.control.setDestination([this.destination.lng, this.destination.lat]);
-        }
-      } else this.control.removeRoutes();
+      }
+      if (this.destination) {
+        this.control.setDestination([this.destination.lng, this.destination.lat]);
+      }
     },
     setDestination(location) {
+      this.control.removeRoutes();
+      if (this.origin) {
+        this.control.setOrigin([this.origin.lng, this.origin.lat]);
+      }
       if (location) {
-        if (this.origin) {
-          this.control.setOrigin([this.origin.lng, this.origin.lat]);
-        }
         this.control.setDestination([location.lng, location.lat]);
-      } else this.control.removeRoutes();
+      }
     },
     setProfile(query) {
       this.control.actions.setProfile(query);
