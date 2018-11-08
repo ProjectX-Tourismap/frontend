@@ -499,6 +499,10 @@ export default {
 
 <!--suppress CssUnusedSymbol -->
 <style>
+  .mapboxgl-ctrl-attrib, .mapboxgl-ctrl-logo {
+    pointer-events: none;
+  }
+
   .v-list__tile {
     height: auto !important;
   }
