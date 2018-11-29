@@ -50,6 +50,9 @@
           </template>
         </mgl-marker>
       </mgl-map>
+
+      <div class="status-bar"></div>
+
       <div class="searchBox" :class="{xs: $vuetify.breakpoint.xsOnly}">
         <v-text-field v-model="searchText"
                       solo
@@ -535,15 +538,21 @@ export default {
 <style lang="stylus">
   @import "~vuetify/src/stylus/settings/_variables";
 
+  .mapboxgl-ctrl-top-right {
+    top: 10px;
+  }
+
   @media $display-breakpoints.xs-only {
     .mapboxgl-ctrl-top-right {
       position fixed;
-      top: 65px;
+      top: calc(65px + constant(safe-area-inset-top));
+      top: calc(65px + env(safe-area-inset-top));
       right: 10px;
     }
   }
 </style>
 
+<!--suppress CssInvalidFunction -->
 <style lang="scss" scoped>
   #home {
     width: 100%;
@@ -577,13 +586,24 @@ export default {
     height: 100%;
   }
 
+  .status-bar {
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.3);
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: constant(safe-area-inset-top);
+    height: env(safe-area-inset-top);
+  }
+
   .searchBox {
     display: flex;
     z-index: 1;
     max-width: 350vw;
     min-width: 500px;
     position: fixed;
-    top: 20px;
+    top: calc(20px + constant(safe-area-inset-top));
+    top: calc(20px + env(safe-area-inset-top));
     left: 20px;
     pointer-events: none;
 
@@ -615,21 +635,27 @@ export default {
     &.xs {
       top: auto;
       right: auto;
-      bottom: 15px;
       left: 15px;
+      bottom: calc(15px + constant(safe-area-inset-bottom)) !important;
+      bottom: calc(15px + env(safe-area-inset-bottom)) !important;
+      bottom: 15px;
     }
   }
 
   .map-selector {
     z-index: 2;
     position: fixed;
-    bottom: 30px !important;
+    bottom: calc(15px + constant(safe-area-inset-bottom)) !important;
+    bottom: calc(15px + env(safe-area-inset-bottom)) !important;
+    bottom: 15px;
   }
 
   .map-selector-pane {
     display: flex;
     flex-wrap: wrap;
     padding: 20px 0;
+    padding-bottom: constant(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom);
     justify-content: space-around;
 
     > .v-image {
