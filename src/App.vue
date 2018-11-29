@@ -15,21 +15,6 @@ export default {
 <style>
   html, body {
     width: 100%;
-    height: 100%;
     overflow: hidden;
-  }
-
-  .application, .application--wrap, .v-content, .v-content__wrap {
-    min-height: 100% !important;
-    width: 100%;
-    height: 100%;
-  }
-
-  /*noinspection All */
-  .application {
-    margin-top: constant(safe-area-inset-top);
-    margin-bottom: constant(safe-area-inset-bottom);
-    margin-top: env(safe-area-inset-top);
-    margin-bottom: env(safe-area-inset-bottom);
   }
 </style>

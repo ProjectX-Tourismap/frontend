@@ -191,7 +191,7 @@
       </v-card>
     </v-dialog>
 
-    <v-navigation-drawer v-model="showEntityDrawer" absolute right touchless>
+    <v-navigation-drawer v-model="showEntityDrawer" absolute right stateless touchless>
       <fallback-image :src="showDrawerEntityItem.picture" :fall-src="dummyImg" class="pt-0">
         <v-layout column fill-height>
           <v-card-title>
@@ -365,10 +365,6 @@ export default {
     },
   },
   methods: {
-    a(...v) {
-      /* eslint-disable */
-      console.log(...v);
-    },
     hubenyDistance(lat2, lng2) {
       /* eslint-disable no-mixed-operators */
       const radLat1 = this.mapCenter.lat * Math.PI / 180;
@@ -506,6 +502,10 @@ export default {
 
 <!--suppress CssUnusedSymbol -->
 <style>
+  .mapboxgl-ctrl-attrib, .mapboxgl-ctrl-logo {
+    pointer-events: none;
+  }
+
   .v-list__tile {
     height: auto !important;
   }
@@ -596,6 +596,9 @@ export default {
     z-index: 2;
     max-width: 155px;
     max-height: 48px;
+    z-index: 4;
+    max-width: 155px;
+    max-height: 48px;
     position: fixed;
     top: 15px;
     right: 45px;
@@ -623,6 +626,41 @@ export default {
     > .v-image {
       width: 100px;
       max-width: 100px;
+    }
+  }
+
+  .directions-card {
+    width: 100%;
+    padding-left: 10px;
+    display: grid;
+    grid-template-rows: 64px 64px 40px;
+    grid-template-columns: 1fr 40px;
+
+    .start-text {
+      grid-row: 1 / 2;
+      grid-column: 1 / 2;
+    }
+
+    .dest-text {
+      grid-row: 2 / 3;
+      grid-column: 1 / 2;
+    }
+
+    .reverse-btn {
+      margin: auto;
+      grid-row: 1 / 3;
+      grid-column: 2 / 3;
+    }
+
+    .profiles {
+      grid-row: 3 / 4;
+      grid-column: 1 / 2;
+      box-shadow: none;
+      justify-content: space-around;
+
+      &.xs {
+        grid-column: 1 / 3;
+      }
     }
   }
 
