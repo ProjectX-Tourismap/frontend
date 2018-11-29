@@ -2,7 +2,7 @@ import os
 import subprocess
 import json
 
-sizes = [16, 32, 48, 72, 96, 128, 256, 512,  1024, 1240]
+sizes = [16, 32, 48, 72, 96, 128, 144, 256, 512,  1024, 1240]
 
 if __name__ == '__main__':
     basePath = os.path.dirname(os.path.abspath(__file__))

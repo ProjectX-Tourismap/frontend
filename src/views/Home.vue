@@ -6,14 +6,14 @@
 
     <div v-if="showMap" class="main">
       <mgl-map
-              :accessToken="mapbox.token"
-              :mapStyle.sync="mapStyle" @click="clickMap"
-              :center.sync="mapCenter" :zoom.sync="mapZoom"
-              @load="loadMap" @moveend="() => {
+          :accessToken="mapbox.token"
+          :mapStyle.sync="mapStyle" @click="clickMap"
+          :center.sync="mapCenter" :zoom.sync="mapZoom"
+          @load="loadMap" @moveend="() => {
                 this.fetchEntities();
                 this.mapBounds = $refs.mapView.map.getBounds();
               }"
-              class="map-view" ref="mapView">
+          class="map-view" ref="mapView">
 
         <mgl-navigation-control @added="showControl = true" position="top-right"/>
         <mgl-directions-control :accessToken="mapbox.token" :interactive="false"
@@ -25,7 +25,7 @@
                                   instructions: false,
                                   profileSwitcher: false,
                                 }" position="bottom-left"/>
-        <mgl-geolocate-control />
+        <mgl-geolocate-control/>
 
         <mgl-marker v-for="entity in entities" :key="`${entity.categoryId}:${entity.id}`"
                     anchor="top"
@@ -33,7 +33,7 @@
                     v-if="mapZoom >= 11 && inMapBounds(entity)">
           <template slot="marker">
             <div style="{max-width:30px;width:30px;height:30px;background:#000;border-radius:50%;}"
-               :style="{
+                 :style="{
                  background:colors[parseInt(entity.genreCode.substr(0, 2), 10)] || '#3FB1CE'
                }" :data-categoryid="entity.categoryId" :data-id="entity.id">
             </div>
@@ -69,26 +69,35 @@
                         :value="direction.start && (direction.start.name ? direction.start.name :
                           `${direction.start.lat}, ${direction.start.lng}`)"
                         :placeholder="language.keys.start" prepend-icon="my_location" clearable
-                        @click:clear="direction.start = undefined" />
+                        @click:clear="direction.start = undefined"/>
           <v-text-field class="dest-text" readonly
                         :value="direction.dest && (direction.dest.name ? direction.dest.name :
                           `${direction.dest.lat}, ${direction.dest.lng}`)"
                         :placeholder="language.keys.dest" prepend-icon="location_on" clearable
-                        @click:clear="direction.dest = undefined" />
+                        @click:clear="direction.dest = undefined"/>
           <v-btn flat icon class="reverse-btn" @click="directionReverse">
             <v-icon medium style="transform:rotate(90deg)">compare_arrows</v-icon>
           </v-btn>
           <v-btn-toggle v-model="direction.profile" :mandatory="true"
                         class="profiles" :class="{xs: $vuetify.breakpoint.xsOnly}">
-            <v-btn flat value="mapbox/driving-traffic"><v-icon>directions_car</v-icon></v-btn>
-            <v-btn flat value="mapbox/driving"><v-icon>directions_car</v-icon>(highway)</v-btn>
-            <v-btn flat value="mapbox/cycling"><v-icon>directions_bike</v-icon></v-btn>
-            <v-btn flat value="mapbox/walking"><v-icon>directions_walk</v-icon></v-btn>
+            <v-btn flat value="mapbox/driving-traffic">
+              <v-icon>directions_car</v-icon>
+            </v-btn>
+            <v-btn flat value="mapbox/driving">
+              <v-icon>directions_car</v-icon>
+              (highway)
+            </v-btn>
+            <v-btn flat value="mapbox/cycling">
+              <v-icon>directions_bike</v-icon>
+            </v-btn>
+            <v-btn flat value="mapbox/walking">
+              <v-icon>directions_walk</v-icon>
+            </v-btn>
           </v-btn-toggle>
         </v-card>
 
         <v-btn fab large v-show="showControl" @click="isDirection = !isDirection"
-          color="white" class="directions-button">
+               color="white" class="directions-button">
           <v-icon :color="isDirection ? '#000' : '#4285F4'">
             {{isDirection ? 'clear' : 'directions'}}
           </v-icon>
@@ -407,18 +416,20 @@ export default {
       Vue.nextTick(() => {
         const text = this.language.code ? `{name_${this.language.code}}` : '{name}';
         this.$refs.mapView.map.getStyle().layers
-          .filter(v => v.layout && v.layout.hasOwnProperty('text-field') && v.layout['text-field'] !== '{ref}')
+          .filter(v => v.layout &&
+            Object.prototype.hasOwnProperty.call(v.layout, 'text-field') && v.layout['text-field'] !== '{ref}')
           .forEach((v) => {
-          if (typeof v.layout['text-field'] === 'string') {
-            this.$refs.mapView.map.setLayoutProperty(v.id, 'text-field', text);
-          } else if (v.layout['text-field'].stops) {
-            const stops = [...v.layout['text-field'].stops].map(v => {
-              if (v[1].match(/{name(_\w{2})?}/)) v[1] = text;
-              return v;
-            });
-            this.$refs.mapView.map.setLayoutProperty(v.id, 'text-field', { ...v.layout['text-field'], stops });
-          }
-        });
+            if (typeof v.layout['text-field'] === 'string') {
+              this.$refs.mapView.map.setLayoutProperty(v.id, 'text-field', text);
+            } else if (v.layout['text-field'].stops) {
+              const stops = [...v.layout['text-field'].stops].map((s) => {
+                // eslint-disable-next-line no-param-reassign
+                if (s[1].match(/{name(_\w{2})?}/)) s[1] = text;
+                return s;
+              });
+              this.$refs.mapView.map.setLayoutProperty(v.id, 'text-field', { ...v.layout['text-field'], stops });
+            }
+          });
       });
     },
     clickSearchButton() {
@@ -493,9 +504,10 @@ export default {
     },
     inMapBounds(entity) {
       if (!this.mapBounds) return false;
+      /* eslint-disable no-underscore-dangle, max-len */
       return (this.mapBounds._ne.lat >= entity.geo.lat && entity.geo.lat >= this.mapBounds._sw.lat) &&
         (this.mapBounds._ne.lng >= entity.geo.lng && entity.geo.lng >= this.mapBounds._sw.lng);
-    }
+    },
   },
 };
 </script>
@@ -593,9 +605,6 @@ export default {
   }
 
   .language-selector {
-    z-index: 2;
-    max-width: 155px;
-    max-height: 48px;
     z-index: 4;
     max-width: 155px;
     max-height: 48px;
