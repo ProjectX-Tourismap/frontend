@@ -6,14 +6,14 @@
 
     <div v-if="showMap" class="main">
       <mgl-map
-              :accessToken="mapbox.token"
-              :mapStyle.sync="mapStyle" @click="clickMap"
-              :center.sync="mapCenter" :zoom.sync="mapZoom"
-              @load="loadMap" @moveend="() => {
+          :accessToken="mapbox.token"
+          :mapStyle.sync="mapStyle" @click="clickMap"
+          :center.sync="mapCenter" :zoom.sync="mapZoom"
+          @load="loadMap" @moveend="() => {
                 this.fetchEntities();
                 this.mapBounds = $refs.mapView.map.getBounds();
               }"
-              class="map-view" ref="mapView">
+          class="map-view" ref="mapView">
 
         <mgl-navigation-control @added="showControl = true" position="top-right"/>
         <mgl-directions-control :accessToken="mapbox.token" :interactive="false"
@@ -25,7 +25,7 @@
                                   instructions: false,
                                   profileSwitcher: false,
                                 }" position="bottom-left"/>
-        <mgl-geolocate-control />
+        <mgl-geolocate-control/>
 
         <mgl-marker v-for="entity in entities" :key="`${entity.categoryId}:${entity.id}`"
                     anchor="top"
@@ -33,8 +33,8 @@
                     v-if="mapZoom >= 11 && inMapBounds(entity)">
           <template slot="marker">
             <div style="{max-width:30px;width:30px;height:30px;background:#000;border-radius:50%;}"
-               :style="{
-                 background:colors[parseInt(entity.genreCode.substr(0, 2), 10)] || '#3FB1CE'
+                 :style="{
+                 background:colors[parseInt(entity.genreCode.substr(0, 2), 10)].color || '#3FB1CE'
                }" :data-categoryid="entity.categoryId" :data-id="entity.id">
             </div>
           </template>
@@ -70,26 +70,35 @@
                         :value="direction.start && (direction.start.name ? direction.start.name :
                           `${direction.start.lat}, ${direction.start.lng}`)"
                         :placeholder="language.keys.start" prepend-icon="my_location" clearable
-                        @click:clear="direction.start = undefined" />
+                        @click:clear="direction.start = undefined"/>
           <v-text-field class="dest-text" readonly
                         :value="direction.dest && (direction.dest.name ? direction.dest.name :
                           `${direction.dest.lat}, ${direction.dest.lng}`)"
                         :placeholder="language.keys.dest" prepend-icon="location_on" clearable
-                        @click:clear="direction.dest = undefined" />
+                        @click:clear="direction.dest = undefined"/>
           <v-btn flat icon class="reverse-btn" @click="directionReverse">
             <v-icon medium style="transform:rotate(90deg)">compare_arrows</v-icon>
           </v-btn>
           <v-btn-toggle v-model="direction.profile" :mandatory="true"
                         class="profiles" :class="{xs: $vuetify.breakpoint.xsOnly}">
-            <v-btn flat value="mapbox/driving-traffic"><v-icon>directions_car</v-icon></v-btn>
-            <v-btn flat value="mapbox/driving"><v-icon>directions_car</v-icon>(highway)</v-btn>
-            <v-btn flat value="mapbox/cycling"><v-icon>directions_bike</v-icon></v-btn>
-            <v-btn flat value="mapbox/walking"><v-icon>directions_walk</v-icon></v-btn>
+            <v-btn flat value="mapbox/driving-traffic">
+              <v-icon>directions_car</v-icon>
+            </v-btn>
+            <v-btn flat value="mapbox/driving">
+              <v-icon>directions_car</v-icon>
+              (highway)
+            </v-btn>
+            <v-btn flat value="mapbox/cycling">
+              <v-icon>directions_bike</v-icon>
+            </v-btn>
+            <v-btn flat value="mapbox/walking">
+              <v-icon>directions_walk</v-icon>
+            </v-btn>
           </v-btn-toggle>
         </v-card>
 
         <v-btn fab large v-show="showControl" @click="isDirection = !isDirection"
-          color="white" class="directions-button">
+               color="white" class="directions-button">
           <v-icon :color="isDirection ? '#000' : '#4285F4'">
             {{isDirection ? 'clear' : 'directions'}}
           </v-icon>
@@ -109,14 +118,26 @@
         </v-list>
       </v-menu>
 
-        <v-menu class="category-selector" v-model="showCategoryMenu" absolute>
-            <v-btn color="white" slot="activator">カテゴリー</v-btn>
-            <v-list>
-                <v-list-tile>
-                    <v-list-tile-title>test</v-list-tile-title>>
-                </v-list-tile>
-            </v-list>
-        </v-menu>
+      <v-menu class="category-selector" v-model="showCategoryMenu" absolute>
+        <v-btn color="white" slot="activator">カテゴリー</v-btn>
+        <v-list>
+          <v-list-tile>
+            <v-list-tile-avatar>
+              <div style="width: 30px;height: 30px;"></div>
+            </v-list-tile-avatar>
+            <v-list-tile-title>全て</v-list-tile-title>
+          </v-list-tile>
+          <v-list-tile v-for="color in colors" :key="color.name">
+            <v-list-tile-avatar>
+              <div style="width: 30px;height: 30px;border-radius: 50%"
+                   :style="{backgroundColor:color.color}"></div>
+            </v-list-tile-avatar>
+            <v-list-tile-title>
+              {{ color.name }}
+            </v-list-tile-title>
+          </v-list-tile>
+        </v-list>
+      </v-menu>
 
       <v-btn dark fab absolute bottom right class="map-selector"
              @click="showMapStylePane = true" v-show="showControl">
@@ -309,7 +330,28 @@ export default {
       },
       fetchLocations: [],
       entities: [],
-      colors: ['lightgray', 'red', 'lightgreen', 'lightblue', 'orange'],
+      colors: [
+        {
+          color: 'lightgray',
+          name: 'マンホール',
+        },
+        {
+          color: 'red',
+          name: 'グルメ',
+        },
+        {
+          color: 'lightgreen',
+          name: 'ショッピング',
+        },
+        {
+          color: 'lightblue',
+          name: 'レジャー,エンタメ',
+        },
+        {
+          color: 'orange',
+          name: '暮らし,レジャー',
+        },
+      ],
       nowMapType: 'day',
       showMap: false,
       showControl: false,
@@ -401,11 +443,11 @@ export default {
     },
     fetchEntities() {
       if (this.mapZoom < 14 || this.fetchLocations
-        .some(({ lat, lng }) => Math.abs(this.hubenyDistance(lat, lng)) <= 1000)) return;
-      this.fetchLocations.push({ ...this.mapCenter });
+        .some(({lat, lng}) => Math.abs(this.hubenyDistance(lat, lng)) <= 1000)) return;
+      this.fetchLocations.push({...this.mapCenter});
       const query = `{nearEntitiesInPoint(point:{lat:${this.mapCenter.lat}lng:${this.mapCenter.lng}}distance:4 limit:100){genreCode categoryId id name desc picture geo{lat lng}}}`;
       this.$http({
-        params: { query },
+        params: {query},
       }).then((res) => {
         const nearEntities = res.data.data.nearEntitiesInPoint
           .filter(v => !this.entities.some(c => c.categoryId === v.categoryId && c.id === v.id));
@@ -414,7 +456,7 @@ export default {
     },
     loadMap() {
       this.fetchEntities();
-      const { map } = this.$refs.mapView;
+      const {map} = this.$refs.mapView;
       map.on('styledata', this.changeLanguage);
       this.mapBounds = map.getBounds();
     },
@@ -424,16 +466,16 @@ export default {
         this.$refs.mapView.map.getStyle().layers
           .filter(v => v.layout && v.layout.hasOwnProperty('text-field') && v.layout['text-field'] !== '{ref}')
           .forEach((v) => {
-          if (typeof v.layout['text-field'] === 'string') {
-            this.$refs.mapView.map.setLayoutProperty(v.id, 'text-field', text);
-          } else if (v.layout['text-field'].stops) {
-            const stops = [...v.layout['text-field'].stops].map(v => {
-              if (v[1].match(/{name(_\w{2})?}/)) v[1] = text;
-              return v;
-            });
-            this.$refs.mapView.map.setLayoutProperty(v.id, 'text-field', { ...v.layout['text-field'], stops });
-          }
-        });
+            if (typeof v.layout['text-field'] === 'string') {
+              this.$refs.mapView.map.setLayoutProperty(v.id, 'text-field', text);
+            } else if (v.layout['text-field'].stops) {
+              const stops = [...v.layout['text-field'].stops].map(v => {
+                if (v[1].match(/{name(_\w{2})?}/)) v[1] = text;
+                return v;
+              });
+              this.$refs.mapView.map.setLayoutProperty(v.id, 'text-field', {...v.layout['text-field'], stops});
+            }
+          });
       });
     },
     clickSearchButton() {
@@ -517,166 +559,166 @@ export default {
 
 <!--suppress CssUnusedSymbol -->
 <style>
-  .v-list__tile {
-    height: auto !important;
-  }
+.v-list__tile {
+  height: auto !important;
+}
 
-  .v-list__tile__avatar {
-    margin-top: 3px;
-    margin-bottom: 3px;
-  }
+.v-list__tile__avatar {
+  margin-top: 3px;
+  margin-bottom: 3px;
+}
 
-  .near-entities .v-list__tile {
-    padding: 0 3px !important;
-  }
+.near-entities .v-list__tile {
+  padding: 0 3px !important;
+}
 </style>
 
 <style lang="stylus">
-  @import "~vuetify/src/stylus/settings/_variables";
+@import "~vuetify/src/stylus/settings/_variables";
 
-  @media $display-breakpoints.xs-only {
-    .mapboxgl-ctrl-top-right {
-      position fixed;
-      top: 65px;
-      right: 10px;
-    }
+@media $display-breakpoints.xs-only {
+  .mapboxgl-ctrl-top-right {
+    position fixed;
+    top: 65px;
+    right: 10px;
   }
+}
 </style>
 
 <style lang="scss" scoped>
-  #home {
-    width: 100%;
-    height: 100%;
+#home {
+  width: 100%;
+  height: 100%;
+}
+
+button.fab-btn {
+  bottom: 16px;
+}
+
+.map-view {
+  width: 100%;
+  height: 100%;
+}
+
+.overlay {
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.5);
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.main {
+  width: 100%;
+  height: 100%;
+}
+
+.searchBox {
+  display: flex;
+  z-index: 1;
+  max-width: 350vw;
+  min-width: 500px;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  pointer-events: none;
+
+  & > * {
+    pointer-events: auto;
   }
 
-  button.fab-btn {
-    bottom: 16px;
+  &.xs {
+    max-width: calc(100% - 25px);
+    min-width: calc(100% - 25px);
+    width: calc(100% - 25px);
   }
 
-  .map-view {
-    width: 100%;
-    height: 100%;
+  .directions-button {
+    margin-top: 4px;
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.language-selector {
+  z-index: 2;
+  max-width: 155px;
+  max-height: 48px;
+  position: fixed;
+  top: 15px;
+  right: 45px;
+
+  &.xs {
+    top: auto;
+    right: auto;
+    bottom: 15px;
+    left: 15px;
+  }
+}
+
+.category-selector {
+  z-index: 3;
+  position: absolute;
+  top: 15px;
+  right: 210px;
+}
+
+.map-selector {
+  z-index: 2;
+  position: fixed;
+  bottom: 30px !important;
+}
+
+.map-selector-pane {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 20px 0;
+  justify-content: space-around;
+
+  > .v-image {
+    width: 100px;
+    max-width: 100px;
+  }
+}
+
+.directions-card {
+  width: 100%;
+  padding-left: 10px;
+  display: grid;
+  grid-template-rows: 64px 64px 40px;
+  grid-template-columns: 1fr 40px;
+
+  .start-text {
+    grid-row: 1 / 2;
+    grid-column: 1 / 2;
   }
 
-  .overlay {
-    z-index: 1000;
-    background: rgba(0, 0, 0, 0.5);
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  .dest-text {
+    grid-row: 2 / 3;
+    grid-column: 1 / 2;
   }
 
-  .main {
-    width: 100%;
-    height: 100%;
+  .reverse-btn {
+    margin: auto;
+    grid-row: 1 / 3;
+    grid-column: 2 / 3;
   }
 
-  .searchBox {
-    display: flex;
-    z-index: 1;
-    max-width: 350vw;
-    min-width: 500px;
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    pointer-events: none;
-
-    & > * {
-      pointer-events: auto;
-    }
-
-    &.xs {
-      max-width: calc(100% - 25px);
-      min-width: calc(100% - 25px);
-      width: calc(100% - 25px);
-    }
-
-    .directions-button {
-      margin-top: 4px;
-      width: 44px;
-      height: 44px;
-    }
-  }
-
-  .language-selector {
-    z-index: 2;
-    max-width: 155px;
-    max-height: 48px;
-    position: fixed;
-    top: 15px;
-    right: 45px;
-
-    &.xs {
-      top: auto;
-      right: auto;
-      bottom: 15px;
-      left: 15px;
-    }
-  }
-
-  .category-selector {
-      z-index: 3;
-      position: absolute;
-      top: 15px;
-      right: 210px;
-  }
-
-  .map-selector {
-    z-index: 2;
-    position: fixed;
-    bottom: 30px !important;
-  }
-
-  .map-selector-pane {
-    display: flex;
-    flex-wrap: wrap;
-    padding: 20px 0;
+  .profiles {
+    grid-row: 3 / 4;
+    grid-column: 1 / 2;
+    box-shadow: none;
     justify-content: space-around;
 
-    > .v-image {
-      width: 100px;
-      max-width: 100px;
+    &.xs {
+      grid-column: 1 / 3;
     }
   }
-
-  .directions-card {
-    width: 100%;
-    padding-left: 10px;
-    display: grid;
-    grid-template-rows: 64px 64px 40px;
-    grid-template-columns: 1fr 40px;
-
-    .start-text {
-      grid-row: 1 / 2;
-      grid-column: 1 / 2;
-    }
-
-    .dest-text {
-      grid-row: 2 / 3;
-      grid-column: 1 / 2;
-    }
-
-    .reverse-btn {
-      margin: auto;
-      grid-row: 1 / 3;
-      grid-column: 2 / 3;
-    }
-
-    .profiles {
-      grid-row: 3 / 4;
-      grid-column: 1 / 2;
-      box-shadow: none;
-      justify-content: space-around;
-
-      &.xs {
-        grid-column: 1 / 3;
-      }
-    }
-  }
+}
 </style>
 
