@@ -50,6 +50,7 @@
           </template>
         </mgl-marker>
       </mgl-map>
+
       <div class="searchBox" :class="{xs: $vuetify.breakpoint.xsOnly}">
         <v-text-field v-model="searchText"
                       solo
@@ -107,6 +108,15 @@
           </v-list-tile>
         </v-list>
       </v-menu>
+
+        <v-menu class="category-selector" v-model="showCategoryMenu" absolute>
+            <v-btn color="white" slot="activator">カテゴリー</v-btn>
+            <v-list>
+                <v-list-tile>
+                    <v-list-tile-title>test</v-list-tile-title>>
+                </v-list-tile>
+            </v-list>
+        </v-menu>
 
       <v-btn dark fab absolute bottom right class="map-selector"
              @click="showMapStylePane = true" v-show="showControl">
@@ -320,6 +330,7 @@ export default {
         dest: undefined,
         profile: 'mapbox/driving',
       },
+      showCategoryMenu: false,
     };
   },
   mounted() {
@@ -606,6 +617,13 @@ export default {
       bottom: 15px;
       left: 15px;
     }
+  }
+
+  .category-selector {
+      z-index: 3;
+      position: absolute;
+      top: 15px;
+      right: 210px;
   }
 
   .map-selector {
