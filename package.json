@@ -12,6 +12,7 @@
     "axios": "^0.18.0",
     "axios-mock-adapter": "^1.15.0",
     "mapbox-gl": "^0.50.0-beta.1",
+    "npm": "^6.4.1",
     "register-service-worker": "^1.5.2",
     "vue": "^2.5.17",
     "vue-loaders": "^2.0.0",
