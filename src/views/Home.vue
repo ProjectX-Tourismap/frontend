@@ -5,146 +5,45 @@
     </div>
 
     <div v-if="showMap" class="main">
-      <mgl-map
-              :accessToken="mapbox.token"
-              :mapStyle.sync="mapStyle" @click="clickMap"
-              :center.sync="mapCenter" :zoom.sync="mapZoom"
-              @load="loadMap" @moveend="() => {
-                this.fetchEntities();
-                this.mapBounds = $refs.mapView.map.getBounds();
-              }"
-              class="map-view" ref="mapView">
+      <map-view
+          ref="mapView"
+          @openEntityDrawer="openEntityDrawer"
+          @clickMap="clickMap"
+          @changeLanguage="changeLanguage"
+          :show-map.sync="showMap"
+          :show-control.sync="showControl"
+          :access-token="mapbox.token"
+          :colors="colors"
+          :map-style="mapStyle"
+          :direction-start="directionStartLocation"
+          :direction-dest="directionDestLocation"
+          :direction-profile="direction.profile" />
 
-        <mgl-navigation-control @added="showControl = true" position="top-right"/>
-        <mgl-directions-control :accessToken="mapbox.token" :interactive="false"
-                                :origin="directionStartLocation"
-                                :destination="directionDestLocation"
-                                :profile="direction.profile"
-                                :controls="{
-                                  inputs: false,
-                                  instructions: false,
-                                  profileSwitcher: false,
-                                }" position="bottom-left"/>
-        <mgl-geolocate-control />
+      <div class="status-bar"></div>
 
-        <mgl-marker v-for="entity in entities" :key="`${entity.categoryId}:${entity.id}`"
-                    anchor="top"
-                    :coordinates="[entity.geo.lng,entity.geo.lat]"
-                    v-if="mapZoom >= 11 && inMapBounds(entity)">
-          <template slot="marker">
-            <div style="{max-width:30px;width:30px;height:30px;background:#000;border-radius:50%;}"
-               :style="{
-                 background:colors[parseInt(entity.genreCode.substr(0, 2), 10)] || '#3FB1CE'
-               }" :data-categoryid="entity.categoryId" :data-id="entity.id">
-            </div>
-          </template>
-          <template>
-            <mgl-popup :closeButton="false">
-              <v-card :flat="true">
-                <div>{{ entity.name }}</div>
-                <v-btn block flat small color="primary" @click="openEntityDrawer(entity)">
-                  ...more
-                </v-btn>
-              </v-card>
-            </mgl-popup>
-          </template>
-        </mgl-marker>
-      </mgl-map>
-      <div class="searchBox" :class="{xs: $vuetify.breakpoint.xsOnly}">
-        <v-text-field v-model="searchText"
-                      solo
-                      type="text"
-                      :label="language.keys.search"
-                      clearable
-                      append-icon="search"
-                      :rules="[(v) => !!v || '']"
-                      @click:append="clickSearchButton"
-                      @keyup.native.enter="clickSearchButton"
-                      v-show="showControl"
-                      v-if="!isDirection"
-        ></v-text-field>
+      <search-box v-show="showControl"
+                  @clickSearchButton="clickSearchButton"
+                  :language="language"
+                  :search-text.sync="searchText"
+                  :direction.sync="direction"
+                  :is-direction.sync="isDirection" />
 
-        <v-card v-else class="directions-card">
-          <v-text-field class="start-text" readonly
-                        :value="direction.start && (direction.start.name ? direction.start.name :
-                          `${direction.start.lat}, ${direction.start.lng}`)"
-                        :placeholder="language.keys.start" prepend-icon="my_location" clearable
-                        @click:clear="direction.start = undefined" />
-          <v-text-field class="dest-text" readonly
-                        :value="direction.dest && (direction.dest.name ? direction.dest.name :
-                          `${direction.dest.lat}, ${direction.dest.lng}`)"
-                        :placeholder="language.keys.dest" prepend-icon="location_on" clearable
-                        @click:clear="direction.dest = undefined" />
-          <v-btn flat icon class="reverse-btn" @click="directionReverse">
-            <v-icon medium style="transform:rotate(90deg)">compare_arrows</v-icon>
-          </v-btn>
-          <v-btn-toggle v-model="direction.profile" :mandatory="true"
-                        class="profiles" :class="{xs: $vuetify.breakpoint.xsOnly}">
-            <v-btn flat value="mapbox/driving-traffic"><v-icon>directions_car</v-icon></v-btn>
-            <v-btn flat value="mapbox/driving"><v-icon>directions_car</v-icon>(highway)</v-btn>
-            <v-btn flat value="mapbox/cycling"><v-icon>directions_bike</v-icon></v-btn>
-            <v-btn flat value="mapbox/walking"><v-icon>directions_walk</v-icon></v-btn>
-          </v-btn-toggle>
-        </v-card>
+      <language-selector
+          :show="showControl"
+          :languages="languages"
+          :nowLang="nowLang"/>
 
-        <v-btn fab large v-show="showControl" @click="isDirection = !isDirection"
-          color="white" class="directions-button">
-          <v-icon :color="isDirection ? '#000' : '#4285F4'">
-            {{isDirection ? 'clear' : 'directions'}}
-          </v-icon>
-        </v-btn>
-      </div>
-
-      <v-menu class="language-selector"
-              :class="{xs: $vuetify.breakpoint.width <= 720}" v-show="showControl">
-        <v-btn color="white" slot="activator">
-          <v-icon left dark>language</v-icon>
-          {{language[($vuetify.breakpoint.width > 500) ? 'name' : 'code']}}
-        </v-btn>
-        <v-list>
-          <v-list-tile v-for="(lang, index) in languages" :key="index" @click="nowLang = index">
-            <v-list-tile-title>{{ lang.name }}</v-list-tile-title>
-          </v-list-tile>
-        </v-list>
-      </v-menu>
-
-      <v-btn dark fab absolute bottom right class="map-selector"
-             @click="showMapStylePane = true" v-show="showControl">
-        <v-icon>layers</v-icon>
-      </v-btn>
-
-      <v-bottom-sheet v-model="showMapStylePane">
-        <v-card tile class="map-selector-pane">
-          <template v-for="name in Object.keys(mapbox.style)">
-            <v-hover :key="name">
-              <v-img slot-scope="{ hover }" :class="`elevation-${hover ? 5 : 2}`" aspect-ratio="1"
-                     :src="`img/maps/${name}.png`"
-                     @click="()=>{nowMapType = name;showMapStylePane = false}"/>
-            </v-hover>
-          </template>
-        </v-card>
-      </v-bottom-sheet>
+      <map-selector
+          :show-button="showControl"
+          :show.sync="showMapStylePane"
+          :type.sync="nowMapType"
+          :styles="mapbox.style" />
     </div>
 
-    <v-dialog v-model="showSearchResult"
-              fullscreen hide-overlay transition="dialog-bottom-transition">
-      <v-card>
-        <v-toolbar dark color="primary">
-          <v-btn icon dark @click.native="showSearchResult = false">
-            <v-icon>close</v-icon>
-          </v-btn>
-          <v-toolbar-title>Search Results</v-toolbar-title>
-        </v-toolbar>
-        <v-list three-line subheader v-if="searchResult.length !== 0">
-          <template v-for="(entity, i) in searchResult">
-            <entity-list-tile @click="openEntityDialog(entity)"
-                              :entity="entity" :fail-img="dummyImg"
-                              :key="`${entity.categoryId}:${entity.id}`"/>
-            <v-divider :key="i"></v-divider>
-          </template>
-        </v-list>
-      </v-card>
-    </v-dialog>
+    <search-result-dialog
+        @openEntityDialog="openEntityDialog"
+        :show.sync="showSearchResult"
+        :search-result="searchResult" />
 
     <v-dialog v-model="showNoResult">
       <v-card>
@@ -157,106 +56,41 @@
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="showEntity" scrollable max-width="500">
-      <v-card>
-        <v-card>
-          <fallback-image :src="showDialogEntityItem.picture" :fall-src="dummyImg">
-            <v-layout column fill-height>
-              <v-card-title>
-                <v-btn dark icon @click="showEntity = false">
-                  <v-icon>chevron_left</v-icon>
-                </v-btn>
-              </v-card-title>
+    <entity-dialog
+        @goLocation="goLocation"
+        :show.sync="showEntity"
+        :dialog-entity="showDialogEntityItem" />
 
-              <v-spacer></v-spacer>
-
-              <v-card-title class="white--text pl-5 pt-5">
-                <div class="display-1 pl-5 pt-5">{{showDialogEntityItem.name}}</div>
-              </v-card-title>
-            </v-layout>
-          </fallback-image>
-
-          <v-list two-line v-if="showDialogEntityItem.desc">
-            <v-list-tile>
-              <v-list-tile-content>
-                {{showDialogEntityItem.desc}}
-              </v-list-tile-content>
-            </v-list-tile>
-          </v-list>
-        </v-card>
-        <v-btn depressed color="primary"
-               @click="goLocation(showDialogEntityItem.geo)">
-          Go to location
-        </v-btn>
-      </v-card>
-    </v-dialog>
-
-    <v-navigation-drawer v-model="showEntityDrawer" absolute right touchless>
-      <fallback-image :src="showDrawerEntityItem.picture" :fall-src="dummyImg" class="pt-0">
-        <v-layout column fill-height>
-          <v-card-title>
-            <v-btn fab icon dark small color="primary" @click="showEntityDrawer = false">
-              <v-icon>chevron_left</v-icon>
-            </v-btn>
-          </v-card-title>
-        </v-layout>
-      </fallback-image>
-
-      <v-divider></v-divider>
-
-      <v-list dense class="pt-0">
-        <v-list-tile>
-          <v-list-tile-content class="pt-2" :style="{fontSize: '1.4rem'}">
-            {{showDrawerEntityItem.name}}
-          </v-list-tile-content>
-        </v-list-tile>
-        <v-list-tile v-if="showDrawerEntityItem.desc">
-          <v-list-tile-content>{{showDrawerEntityItem.desc}}</v-list-tile-content>
-        </v-list-tile>
-        <v-list-tile>
-          <v-list-tile-content class="pt-4" :style="{fontSize: '1.3rem'}"
-                               v-if="nearEntities.length !== 0">
-            近くの施設
-          </v-list-tile-content>
-          <v-list-tile-content class="pt-4 d-flex" :style="{alignItems: 'center'}" v-else>
-            <v-btn depressed round color="primary"
-                   @click="fetchNearEntities(showDrawerEntityItem)">
-              近くの施設を読み込む
-            </v-btn>
-          </v-list-tile-content>
-        </v-list-tile>
-        <v-list-tile class="near-entities" v-if="nearEntities.length !== 0">
-          <v-list>
-            <template v-for="(entity, i) in nearEntities">
-              <entity-list-tile @click="openEntityDialog(entity)"
-                                :entity="entity" :fail-img="dummyImg"
-                                :key="`${entity.categoryId}:${entity.id}`"/>
-              <v-divider :key="i"></v-divider>
-            </template>
-          </v-list>
-        </v-list-tile>
-      </v-list>
-    </v-navigation-drawer>
+    <entity-drawer
+        @openEntityDialog="openEntityDialog"
+        :show.sync="showEntityDrawer"
+        :drawer-entity="showDrawerEntityItem" />
   </div>
 </template>
 
 <script>
 import Vue from 'vue';
 
-import { MglGeolocateControl, MglMap, MglMarker, MglNavigationControl, MglPopup } from 'vue-mapbox';
-import MglDirectionsControl from '../components/MglDirectionsControl';
-import FallbackImage from '../components/FallbackImage.vue';
 import EntityListTile from '../components/EntityListTile.vue';
+import EntityDrawer from '../components/EntityDrawer.vue';
+import EntityDialog from '../components/EntityDialog.vue';
+import MapSelector from '../components/MapSelector.vue';
+import LanguageSelector from '../components/LanguageSelector.vue';
+import DirectionSearchBox from '../components/DirectionSearchBox.vue';
+import SearchBox from '../components/SearchBox.vue';
+import MapView from '../components/MapView.vue';
+import SearchResultDialog from '../components/SearchResultDialog.vue';
 
 export default {
   components: {
-    MglMap,
-    MglGeolocateControl,
-    MglNavigationControl,
-    MglMarker,
-    MglPopup,
-    MglDirectionsControl,
-    FallbackImage,
+    SearchResultDialog,
+    MapView,
+    SearchBox,
+    DirectionSearchBox,
+    LanguageSelector,
+    MapSelector,
+    EntityDialog,
+    EntityDrawer,
     EntityListTile,
   },
   name: 'Home',
@@ -322,17 +156,6 @@ export default {
       },
     };
   },
-  mounted() {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((geo) => {
-        this.setInitGeo(geo.coords.latitude, geo.coords.longitude);
-      }, () => {
-        this.setInitGeo();
-      });
-    } else {
-      this.setInitGeo();
-    }
-  },
   computed: {
     mapStyle() {
       return this.mapbox.style[this.nowMapType];
@@ -354,9 +177,6 @@ export default {
     },
   },
   watch: {
-    mapStyle() {
-      this.$refs.mapView.map.setStyle(this.mapStyle);
-    },
     nowLang(val) {
       this.changeLanguage(val);
     },
@@ -364,11 +184,18 @@ export default {
       if (!val) this.nearEntities = [];
     },
   },
+  mounted() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((geo) => {
+        this.setInitGeo(geo.coords.latitude, geo.coords.longitude);
+      }, () => {
+        this.setInitGeo();
+      });
+    } else {
+      this.setInitGeo();
+    }
+  },
   methods: {
-    a(...v) {
-      /* eslint-disable */
-      console.log(...v);
-    },
     hubenyDistance(lat2, lng2) {
       /* eslint-disable no-mixed-operators */
       const radLat1 = this.mapCenter.lat * Math.PI / 180;
@@ -401,28 +228,24 @@ export default {
         this.entities.push(...nearEntities);
       });
     },
-    loadMap() {
-      this.fetchEntities();
-      const { map } = this.$refs.mapView;
-      map.on('styledata', this.changeLanguage);
-      this.mapBounds = map.getBounds();
-    },
     changeLanguage() {
       Vue.nextTick(() => {
         const text = this.language.code ? `{name_${this.language.code}}` : '{name}';
         this.$refs.mapView.map.getStyle().layers
-          .filter(v => v.layout && v.layout.hasOwnProperty('text-field') && v.layout['text-field'] !== '{ref}')
+          .filter(v => v.layout &&
+            Object.prototype.hasOwnProperty.call(v.layout, 'text-field') && v.layout['text-field'] !== '{ref}')
           .forEach((v) => {
-          if (typeof v.layout['text-field'] === 'string') {
-            this.$refs.mapView.map.setLayoutProperty(v.id, 'text-field', text);
-          } else if (v.layout['text-field'].stops) {
-            const stops = [...v.layout['text-field'].stops].map(v => {
-              if (v[1].match(/{name(_\w{2})?}/)) v[1] = text;
-              return v;
-            });
-            this.$refs.mapView.map.setLayoutProperty(v.id, 'text-field', { ...v.layout['text-field'], stops });
-          }
-        });
+            if (typeof v.layout['text-field'] === 'string') {
+              this.$refs.mapView.map.setLayoutProperty(v.id, 'text-field', text);
+            } else if (v.layout['text-field'].stops) {
+              const stops = [...v.layout['text-field'].stops].map((s) => {
+                // eslint-disable-next-line no-param-reassign
+                if (s[1].match(/{name(_\w{2})?}/)) s[1] = text;
+                return s;
+              });
+              this.$refs.mapView.map.setLayoutProperty(v.id, 'text-field', { ...v.layout['text-field'], stops });
+            }
+          });
       });
     },
     clickSearchButton() {
@@ -472,15 +295,6 @@ export default {
       return (categoryId && id) ?
         this.entities.find(e => e.categoryId === categoryId && e.id === id) : undefined;
     },
-    directionReverse() {
-      this.direction = {
-        ...this.direction,
-        start: this.direction.dest,
-        dest: this.direction.start,
-        startLocation: this.direction.destLocation,
-        destLocation: this.direction.startLocation,
-      };
-    },
     clickMap(event) {
       if (this.isDirection) {
         let element = document.elementFromPoint(event.point.x, event.point.y);
@@ -497,15 +311,20 @@ export default {
     },
     inMapBounds(entity) {
       if (!this.mapBounds) return false;
+      /* eslint-disable no-underscore-dangle, max-len */
       return (this.mapBounds._ne.lat >= entity.geo.lat && entity.geo.lat >= this.mapBounds._sw.lat) &&
         (this.mapBounds._ne.lng >= entity.geo.lng && entity.geo.lng >= this.mapBounds._sw.lng);
-    }
+    },
   },
 };
 </script>
 
 <!--suppress CssUnusedSymbol -->
 <style>
+  .mapboxgl-ctrl-attrib, .mapboxgl-ctrl-logo {
+    pointer-events: none;
+  }
+
   .v-list__tile {
     height: auto !important;
   }
@@ -520,18 +339,25 @@ export default {
   }
 </style>
 
+<!--suppress ALL -->
 <style lang="stylus">
   @import "~vuetify/src/stylus/settings/_variables";
+
+  .mapboxgl-ctrl-top-right {
+    top: 10px;
+  }
 
   @media $display-breakpoints.xs-only {
     .mapboxgl-ctrl-top-right {
       position fixed;
-      top: 65px;
+      top: calc(65px + constant(safe-area-inset-top));
+      top: calc(65px + env(safe-area-inset-top));
       right: 10px;
     }
   }
 </style>
 
+<!--suppress ALL -->
 <style lang="scss" scoped>
   #home {
     width: 100%;
@@ -540,11 +366,6 @@ export default {
 
   button.fab-btn {
     bottom: 16px;
-  }
-
-  .map-view {
-    width: 100%;
-    height: 100%;
   }
 
   .overlay {
@@ -565,100 +386,14 @@ export default {
     height: 100%;
   }
 
-  .searchBox {
-    display: flex;
-    z-index: 1;
-    max-width: 350vw;
-    min-width: 500px;
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    pointer-events: none;
-
-    & > * {
-      pointer-events: auto;
-    }
-
-    &.xs {
-      max-width: calc(100% - 25px);
-      min-width: calc(100% - 25px);
-      width: calc(100% - 25px);
-    }
-
-    .directions-button {
-      margin-top: 4px;
-      width: 44px;
-      height: 44px;
-    }
-  }
-
-  .language-selector {
-    z-index: 2;
-    max-width: 155px;
-    max-height: 48px;
-    position: fixed;
-    top: 15px;
-    right: 45px;
-
-    &.xs {
-      top: auto;
-      right: auto;
-      bottom: 15px;
-      left: 15px;
-    }
-  }
-
-  .map-selector {
-    z-index: 2;
-    position: fixed;
-    bottom: 30px !important;
-  }
-
-  .map-selector-pane {
-    display: flex;
-    flex-wrap: wrap;
-    padding: 20px 0;
-    justify-content: space-around;
-
-    > .v-image {
-      width: 100px;
-      max-width: 100px;
-    }
-  }
-
-  .directions-card {
+  .status-bar {
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.3);
+    position: absolute;
+    top: 0;
     width: 100%;
-    padding-left: 10px;
-    display: grid;
-    grid-template-rows: 64px 64px 40px;
-    grid-template-columns: 1fr 40px;
-
-    .start-text {
-      grid-row: 1 / 2;
-      grid-column: 1 / 2;
-    }
-
-    .dest-text {
-      grid-row: 2 / 3;
-      grid-column: 1 / 2;
-    }
-
-    .reverse-btn {
-      margin: auto;
-      grid-row: 1 / 3;
-      grid-column: 2 / 3;
-    }
-
-    .profiles {
-      grid-row: 3 / 4;
-      grid-column: 1 / 2;
-      box-shadow: none;
-      justify-content: space-around;
-
-      &.xs {
-        grid-column: 1 / 3;
-      }
-    }
+    height: constant(safe-area-inset-top);
+    height: env(safe-area-inset-top);
   }
 </style>
 
