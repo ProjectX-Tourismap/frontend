@@ -17,7 +17,8 @@
           :map-style="mapStyle"
           :direction-start="directionStartLocation"
           :direction-dest="directionDestLocation"
-          :direction-profile="direction.profile" />
+          :direction-profile="direction.profile"
+          :now-category="nowCategory" />
 
       <div class="status-bar"></div>
 
@@ -27,6 +28,11 @@
                   :search-text.sync="searchText"
                   :direction.sync="direction"
                   :is-direction.sync="isDirection" />
+
+      <category-selector
+        :show="showControl"
+        :colors="colors"
+        @change="(i) => { this.nowCategory = i; }"/>
 
       <language-selector
           :show="showControl"
@@ -80,6 +86,7 @@ import DirectionSearchBox from '../components/DirectionSearchBox.vue';
 import SearchBox from '../components/SearchBox.vue';
 import MapView from '../components/MapView.vue';
 import SearchResultDialog from '../components/SearchResultDialog.vue';
+import CategorySelector from '../components/CategorySelector.vue';
 
 export default {
   components: {
@@ -92,6 +99,7 @@ export default {
     EntityDialog,
     EntityDrawer,
     EntityListTile,
+    CategorySelector,
   },
   name: 'Home',
   data() {
@@ -133,7 +141,28 @@ export default {
       },
       fetchLocations: [],
       entities: [],
-      colors: ['lightgray', 'red', 'lightgreen', 'lightblue', 'orange'],
+      colors: [
+        {
+          color: 'lightgray',
+          name: 'マンホール',
+        },
+        {
+          color: 'red',
+          name: 'グルメ',
+        },
+        {
+          color: 'lightgreen',
+          name: 'ショッピング',
+        },
+        {
+          color: 'lightblue',
+          name: 'レジャー,エンタメ',
+        },
+        {
+          color: 'orange',
+          name: '暮らし,レジャー',
+        },
+      ],
       nowMapType: 'day',
       showMap: false,
       showControl: false,
@@ -154,6 +183,7 @@ export default {
         dest: undefined,
         profile: 'mapbox/driving',
       },
+      nowCategory: -1,
     };
   },
   computed: {

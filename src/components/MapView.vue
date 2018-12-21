@@ -20,14 +20,12 @@
                                 }" position="bottom-left"/>
     <mgl-geolocate-control/>
 
-    <mgl-marker v-for="entity in entities" :key="`${entity.categoryId}:${entity.id}`"
-                anchor="top"
-                :coordinates="[entity.geo.lng,entity.geo.lat]"
-                v-if="mapZoom >= 11 && inMapBounds(entity)">
+    <mgl-marker v-for="entity in filterEntities" :key="`${entity.categoryId}:${entity.id}`"
+                anchor="top" :coordinates="[entity.geo.lng,entity.geo.lat]">
       <template slot="marker">
         <div style="{max-width:30px;width:30px;height:30px;background:#000;border-radius:50%;}"
              :style="{
-                 background:colors[parseInt(entity.genreCode.substr(0, 2), 10)] || '#3FB1CE'
+                 background:colors[parseInt(entity.genreCode.substr(0, 2), 10)].color || '#3FB1CE'
                }" :data-categoryid="entity.categoryId" :data-id="entity.id">
         </div>
       </template>
@@ -92,6 +90,10 @@ export default {
       type: String,
       default: 'mapbox/driving',
     },
+    nowCategory: {
+      type: Number,
+      default: -1,
+    },
   },
   data() {
     return {
@@ -110,6 +112,13 @@ export default {
       get() {
         return this.$refs.mapView.map;
       },
+    },
+    filterEntities() {
+      if (this.mapZoom < 11) return [];
+      const es = this.entities.filter(this.inMapBounds);
+      if (this.nowCategory === -1) return es;
+      const genre = `00${this.nowCategory}`.slice(-2);
+      return es.filter(e => e.genreCode.startsWith(genre));
     },
   },
   watch: {
