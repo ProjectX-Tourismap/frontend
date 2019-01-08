@@ -15,7 +15,7 @@ import './stylus/main.styl';
 Vue.config.productionTip = false;
 Vue.prototype.$http = axios.create({
   method: 'get',
-  baseURL: 'https://backend.syuchan.work',
+  baseURL: 'https://backend.syuchan.site',
   url: '/api',
 });
 
