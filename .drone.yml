@@ -31,7 +31,7 @@ pipeline:
         build {{build.number}} failed. Fix me please.
       {{/success}}
       CommitID: {{build.commit}}
-      URL: https://drone.syuchan.work/{{repo.owner}}/{{repo.name}}/{{build.number}}
+      URL: https://drone.syuchan.site/{{repo.owner}}/{{repo.name}}/{{build.number}}
   scp:
     image: appleboy/drone-scp
     host: 192.168.1.251
@@ -59,7 +59,7 @@ pipeline:
       status: [ success, failure ]
     template: >
       {{#success build.status}}
-        Deploy Complete! http://{{truncate build.commit 7}}.frontend.syuchan.work
+        Deploy Complete! http://{{truncate build.commit 7}}.frontend.syuchan.site
       {{else}}
         deploy failed.
       {{/success}}
