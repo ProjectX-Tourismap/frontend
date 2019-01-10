@@ -51,7 +51,7 @@
         :show.sync="showSearchResult"
         :search-result="searchResult" />
 
-    <v-dialog v-model="showNoResult">
+    <v-dialog v-model="showNoResult" max-width="300">
       <v-card>
         <v-card-title>検索結果がありませんでした</v-card-title>
 
