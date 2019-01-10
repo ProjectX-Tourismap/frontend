@@ -37,7 +37,7 @@
       <language-selector
           :show="showControl"
           :languages="languages"
-          :nowLang="nowLang"/>
+          :nowLang.sync="nowLang"/>
 
       <map-selector
           :show-button="showControl"

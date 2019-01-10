@@ -1,6 +1,7 @@
 <template>
   <v-menu class="category-selector" v-model="showCategoryMenu" absolute v-if="show">
-    <v-btn color="white" slot="activator">カテゴリー</v-btn>
+    <v-btn :color="(colors[category] || { color: 'white' }).color"
+           slot="activator">カテゴリー</v-btn>
     <v-list>
       <v-list-tile @click="clickTile(-1)">
         <v-list-tile-avatar>
@@ -37,10 +38,12 @@ export default {
   data() {
     return {
       showCategoryMenu: false,
+      category: -1,
     };
   },
   methods: {
     clickTile(i) {
+      this.category = i;
       this.$emit('change', i);
     },
   },
@@ -53,5 +56,16 @@ export default {
   position: absolute;
   top: 15px;
   right: 210px;
+}
+
+@media (max-width: 850px) {
+  .category-selector {
+    top: auto;
+    right: auto;
+    left: 15px;
+    bottom: calc(15px + constant(safe-area-inset-bottom)) !important;
+    bottom: calc(15px + env(safe-area-inset-bottom)) !important;
+    bottom: 15px;
+  }
 }
 </style>
