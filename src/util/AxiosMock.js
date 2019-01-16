@@ -10,14 +10,12 @@ if (process.env.NODE_ENV !== 'production') {
   console.info('%cNow use AxiosMock!', 'color: red;');
   const mock = new AxiosMockAdapter(axios);
 
-  mock.onGet(/https?:\/\/backend.syuchan.site\/api/).reply((config) => {
+  mock.onGet(/https?:\/\/backend.syuchan.site\/api.*nearEntitiesInPoint.*/).reply((config) => {
     const { query } = config.params;
     const queryName = query.substring(1, query.indexOf('('));
     if (queryName === 'nearEntitiesInPoint') return [200, nearEntitiesInPointMockData];
     return [500];
-  });
-
-  mock.onAny().passThrough();
+  }).onAny().passThrough();
 }
 
 export default axios;

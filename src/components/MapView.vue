@@ -20,14 +20,12 @@
                                 }" position="bottom-left"/>
     <mgl-geolocate-control/>
 
-    <mgl-marker v-for="entity in entities" :key="`${entity.categoryId}:${entity.id}`"
-                anchor="top"
-                :coordinates="[entity.geo.lng,entity.geo.lat]"
-                v-if="mapZoom >= 11 && inMapBounds(entity)">
+    <mgl-marker v-for="entity in filterEntities" :key="`${entity.categoryId}:${entity.id}`"
+                anchor="top" :coordinates="[entity.geo.lng,entity.geo.lat]">
       <template slot="marker">
         <div style="{max-width:30px;width:30px;height:30px;background:#000;border-radius:50%;}"
              :style="{
-                 background:colors[parseInt(entity.genreCode.substr(0, 2), 10)] || '#3FB1CE'
+                 background:colors[parseInt(entity.genreCode.substr(0, 2), 10)].color || '#3FB1CE'
                }" :data-categoryid="entity.categoryId" :data-id="entity.id">
         </div>
       </template>
@@ -46,8 +44,10 @@
 </template>
 
 <script>
-import { MglGeolocateControl, MglMap, MglMarker, MglNavigationControl, MglPopup } from 'vue-mapbox';
-import MglDirectionsControl from '../components/MglDirectionsControl';
+import {
+  MglGeolocateControl, MglMap, MglMarker, MglNavigationControl, MglPopup,
+} from 'vue-mapbox';
+import MglDirectionsControl from './MglDirectionsControl';
 
 export default {
   components: {
@@ -92,11 +92,15 @@ export default {
       type: String,
       default: 'mapbox/driving',
     },
+    nowCategory: {
+      type: Number,
+      default: -1,
+    },
   },
   data() {
     return {
       mapBounds: undefined,
-      mapZoom: 14,
+      mapZoom: 16,
       entities: [],
       mapCenter: {
         lat: 35.689138,
@@ -110,6 +114,13 @@ export default {
       get() {
         return this.$refs.mapView.map;
       },
+    },
+    filterEntities() {
+      if (this.mapZoom < 11) return [];
+      const es = this.entities.filter(this.inMapBounds);
+      if (this.nowCategory === -1) return es;
+      const genre = `00${this.nowCategory}`.slice(-2);
+      return es.filter(e => e.genreCode.startsWith(genre));
     },
   },
   watch: {
@@ -152,16 +163,21 @@ export default {
     inMapBounds(entity) {
       if (!this.mapBounds) return false;
       /* eslint-disable no-underscore-dangle, max-len */
-      return (this.mapBounds._ne.lat >= entity.geo.lat && entity.geo.lat >= this.mapBounds._sw.lat) &&
-        (this.mapBounds._ne.lng >= entity.geo.lng && entity.geo.lng >= this.mapBounds._sw.lng);
+      return (this.mapBounds._ne.lat >= entity.geo.lat && entity.geo.lat >= this.mapBounds._sw.lat)
+        && (this.mapBounds._ne.lng >= entity.geo.lng && entity.geo.lng >= this.mapBounds._sw.lng);
     },
   },
 };
 </script>
 
-<style scoped>
+<style lang="scss">
   .map-view {
     width: 100%;
     height: 100%;
+
+    .mapboxgl-map {
+      width: 100%;
+      height: 100%;
+    }
   }
 </style>

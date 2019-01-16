@@ -1,11 +1,11 @@
 <template>
-  <v-dialog v-model="show" scrollable max-width="500">
+  <v-dialog v-model="_show" scrollable max-width="500">
     <v-card>
       <v-card>
         <fallback-image :src="dialogEntity.picture" :fall-src="dummyImg">
           <v-layout column fill-height>
             <v-card-title>
-              <v-btn dark icon @click="$emit('update:show', false)">
+              <v-btn dark icon @click="_show = false">
                 <v-icon>chevron_left</v-icon>
               </v-btn>
             </v-card-title>
@@ -56,9 +56,15 @@ export default {
       default: 'dummy.svg',
     },
   },
+  computed: {
+    _show: {
+      get() {
+        return this.show;
+      },
+      set(val) {
+        this.$emit('update:show', val);
+      },
+    },
+  },
 };
 </script>
-
-<style scoped>
-
-</style>

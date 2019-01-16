@@ -17,7 +17,8 @@
           :map-style="mapStyle"
           :direction-start="directionStartLocation"
           :direction-dest="directionDestLocation"
-          :direction-profile="direction.profile" />
+          :direction-profile="direction.profile"
+          :now-category="nowCategory" />
 
       <div class="status-bar"></div>
 
@@ -28,10 +29,15 @@
                   :direction.sync="direction"
                   :is-direction.sync="isDirection" />
 
+      <category-selector
+        :show="showControl"
+        :colors="colors"
+        @change="(i) => { this.nowCategory = i; }"/>
+
       <language-selector
           :show="showControl"
           :languages="languages"
-          :nowLang="nowLang"/>
+          :nowLang.sync="nowLang"/>
 
       <map-selector
           :show-button="showControl"
@@ -45,7 +51,7 @@
         :show.sync="showSearchResult"
         :search-result="searchResult" />
 
-    <v-dialog v-model="showNoResult">
+    <v-dialog v-model="showNoResult" max-width="300">
       <v-card>
         <v-card-title>検索結果がありませんでした</v-card-title>
 
@@ -80,6 +86,7 @@ import DirectionSearchBox from '../components/DirectionSearchBox.vue';
 import SearchBox from '../components/SearchBox.vue';
 import MapView from '../components/MapView.vue';
 import SearchResultDialog from '../components/SearchResultDialog.vue';
+import CategorySelector from '../components/CategorySelector.vue';
 
 export default {
   components: {
@@ -92,6 +99,7 @@ export default {
     EntityDialog,
     EntityDrawer,
     EntityListTile,
+    CategorySelector,
   },
   name: 'Home',
   data() {
@@ -133,7 +141,28 @@ export default {
       },
       fetchLocations: [],
       entities: [],
-      colors: ['lightgray', 'red', 'lightgreen', 'lightblue', 'orange'],
+      colors: [
+        {
+          color: 'lightgray',
+          name: 'マンホール',
+        },
+        {
+          color: 'red',
+          name: 'グルメ',
+        },
+        {
+          color: 'lightgreen',
+          name: 'ショッピング',
+        },
+        {
+          color: 'lightblue',
+          name: 'レジャー,エンタメ',
+        },
+        {
+          color: 'orange',
+          name: '暮らし,レジャー',
+        },
+      ],
       nowMapType: 'day',
       showMap: false,
       showControl: false,
@@ -154,6 +183,7 @@ export default {
         dest: undefined,
         profile: 'mapbox/driving',
       },
+      nowCategory: -1,
     };
   },
   computed: {
@@ -232,8 +262,8 @@ export default {
       Vue.nextTick(() => {
         const text = this.language.code ? `{name_${this.language.code}}` : '{name}';
         this.$refs.mapView.map.getStyle().layers
-          .filter(v => v.layout &&
-            Object.prototype.hasOwnProperty.call(v.layout, 'text-field') && v.layout['text-field'] !== '{ref}')
+          .filter(v => v.layout
+            && Object.prototype.hasOwnProperty.call(v.layout, 'text-field') && v.layout['text-field'] !== '{ref}')
           .forEach((v) => {
             if (typeof v.layout['text-field'] === 'string') {
               this.$refs.mapView.map.setLayoutProperty(v.id, 'text-field', text);
@@ -292,28 +322,25 @@ export default {
       });
     },
     getEntity(categoryId, id) {
-      return (categoryId && id) ?
-        this.entities.find(e => e.categoryId === categoryId && e.id === id) : undefined;
+      return (categoryId && id)
+        ? this.entities.find(e => e.categoryId === categoryId && e.id === id) : undefined;
     },
-    clickMap(event) {
+    clickMap({ mapboxEvent }) {
       if (this.isDirection) {
-        let element = document.elementFromPoint(event.point.x, event.point.y);
+        let element = document.elementFromPoint(mapboxEvent.point.x, mapboxEvent.point.y);
         element = this.getEntity(element.dataset.categoryid, element.dataset.id);
         if (!this.direction.start) {
-          this.direction.start = element || event.lngLat;
+          this.direction.start = element || mapboxEvent.lngLat;
         } else if (!this.direction.dest) {
-          this.direction.dest = element || event.lngLat;
-        } else {
-          return;
+          this.direction.dest = element || mapboxEvent.lngLat;
         }
-        event.preventDefault();
       }
     },
     inMapBounds(entity) {
       if (!this.mapBounds) return false;
       /* eslint-disable no-underscore-dangle, max-len */
-      return (this.mapBounds._ne.lat >= entity.geo.lat && entity.geo.lat >= this.mapBounds._sw.lat) &&
-        (this.mapBounds._ne.lng >= entity.geo.lng && entity.geo.lng >= this.mapBounds._sw.lng);
+      return (this.mapBounds._ne.lat >= entity.geo.lat && entity.geo.lat >= this.mapBounds._sw.lat)
+        && (this.mapBounds._ne.lng >= entity.geo.lng && entity.geo.lng >= this.mapBounds._sw.lng);
     },
   },
 };
@@ -396,4 +423,3 @@ export default {
     height: env(safe-area-inset-top);
   }
 </style>
-

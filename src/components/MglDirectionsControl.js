@@ -1,10 +1,9 @@
-import baseMixin from 'vue-mapbox/src/lib/mixin';
-import controlMixin from 'vue-mapbox/src/lib/controlMixin';
+import controlMixin from 'vue-mapbox/src/components/UI/controls/controlMixin';
 import MapboxDirections from '@mapbox/mapbox-gl-directions/dist/mapbox-gl-directions';
 
 export default {
   name: 'DirectionControl',
-  mixins: [baseMixin, controlMixin],
+  mixins: [controlMixin],
   props: {
     position: {
       type: String,
@@ -134,14 +133,10 @@ export default {
   },
   methods: {
     $_deferredMount(payload) {
-      /* eslint no-unused-expressions: ["error", { "allowShortCircuit": true }] */
-      this.map = payload.map;
-      this.map.addControl(this.control, this.position);
-      this.$emit('added', this.control);
-      this.origin && this.setOrigin(this.origin);
-      this.destination && this.setDestination(this.destination);
+      this.$_addControl(payload);
 
-      payload.component.$off('load', this.$_deferredMount);
+      if (this.origin) this.setOrigin(this.origin);
+      if (this.destination) this.setDestination(this.destination);
     },
     setOrigin(location) {
       this.control.removeRoutes();
