@@ -262,8 +262,8 @@ export default {
       Vue.nextTick(() => {
         const text = this.language.code ? `{name_${this.language.code}}` : '{name}';
         this.$refs.mapView.map.getStyle().layers
-          .filter(v => v.layout &&
-            Object.prototype.hasOwnProperty.call(v.layout, 'text-field') && v.layout['text-field'] !== '{ref}')
+          .filter(v => v.layout
+            && Object.prototype.hasOwnProperty.call(v.layout, 'text-field') && v.layout['text-field'] !== '{ref}')
           .forEach((v) => {
             if (typeof v.layout['text-field'] === 'string') {
               this.$refs.mapView.map.setLayoutProperty(v.id, 'text-field', text);
@@ -322,28 +322,25 @@ export default {
       });
     },
     getEntity(categoryId, id) {
-      return (categoryId && id) ?
-        this.entities.find(e => e.categoryId === categoryId && e.id === id) : undefined;
+      return (categoryId && id)
+        ? this.entities.find(e => e.categoryId === categoryId && e.id === id) : undefined;
     },
-    clickMap(event) {
+    clickMap({ mapboxEvent }) {
       if (this.isDirection) {
-        let element = document.elementFromPoint(event.point.x, event.point.y);
+        let element = document.elementFromPoint(mapboxEvent.point.x, mapboxEvent.point.y);
         element = this.getEntity(element.dataset.categoryid, element.dataset.id);
         if (!this.direction.start) {
-          this.direction.start = element || event.lngLat;
+          this.direction.start = element || mapboxEvent.lngLat;
         } else if (!this.direction.dest) {
-          this.direction.dest = element || event.lngLat;
-        } else {
-          return;
+          this.direction.dest = element || mapboxEvent.lngLat;
         }
-        event.preventDefault();
       }
     },
     inMapBounds(entity) {
       if (!this.mapBounds) return false;
       /* eslint-disable no-underscore-dangle, max-len */
-      return (this.mapBounds._ne.lat >= entity.geo.lat && entity.geo.lat >= this.mapBounds._sw.lat) &&
-        (this.mapBounds._ne.lng >= entity.geo.lng && entity.geo.lng >= this.mapBounds._sw.lng);
+      return (this.mapBounds._ne.lat >= entity.geo.lat && entity.geo.lat >= this.mapBounds._sw.lat)
+        && (this.mapBounds._ne.lng >= entity.geo.lng && entity.geo.lng >= this.mapBounds._sw.lng);
     },
   },
 };
@@ -426,4 +423,3 @@ export default {
     height: env(safe-area-inset-top);
   }
 </style>
-

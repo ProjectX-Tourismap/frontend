@@ -20,7 +20,7 @@
 </template>
 
 <script>
-import EntityListTile from '../components/EntityListTile.vue';
+import EntityListTile from './EntityListTile.vue';
 
 export default {
   components: {

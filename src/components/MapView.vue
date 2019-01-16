@@ -44,8 +44,10 @@
 </template>
 
 <script>
-import { MglGeolocateControl, MglMap, MglMarker, MglNavigationControl, MglPopup } from 'vue-mapbox';
-import MglDirectionsControl from '../components/MglDirectionsControl';
+import {
+  MglGeolocateControl, MglMap, MglMarker, MglNavigationControl, MglPopup,
+} from 'vue-mapbox';
+import MglDirectionsControl from './MglDirectionsControl';
 
 export default {
   components: {
@@ -98,7 +100,7 @@ export default {
   data() {
     return {
       mapBounds: undefined,
-      mapZoom: 14,
+      mapZoom: 16,
       entities: [],
       mapCenter: {
         lat: 35.689138,
@@ -161,16 +163,21 @@ export default {
     inMapBounds(entity) {
       if (!this.mapBounds) return false;
       /* eslint-disable no-underscore-dangle, max-len */
-      return (this.mapBounds._ne.lat >= entity.geo.lat && entity.geo.lat >= this.mapBounds._sw.lat) &&
-        (this.mapBounds._ne.lng >= entity.geo.lng && entity.geo.lng >= this.mapBounds._sw.lng);
+      return (this.mapBounds._ne.lat >= entity.geo.lat && entity.geo.lat >= this.mapBounds._sw.lat)
+        && (this.mapBounds._ne.lng >= entity.geo.lng && entity.geo.lng >= this.mapBounds._sw.lng);
     },
   },
 };
 </script>
 
-<style scoped>
+<style lang="scss">
   .map-view {
     width: 100%;
     height: 100%;
+
+    .mapboxgl-map {
+      width: 100%;
+      height: 100%;
+    }
   }
 </style>

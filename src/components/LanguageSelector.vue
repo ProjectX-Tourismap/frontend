@@ -37,7 +37,7 @@ export default {
 <!--suppress ALL -->
 <style lang="scss" scoped>
   .language-selector {
-    z-index: 4;
+    z-index: 3;
     max-width: 155px;
     max-height: 48px;
     position: fixed;

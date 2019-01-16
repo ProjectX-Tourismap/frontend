@@ -1,5 +1,5 @@
 <template>
-  <v-img :src="!isFall && src ? src : fallSrc" height="300px" @error="isFall = true" class="abcd">
+  <v-img :src="!isFall && src ? src : fallSrc" height="300px" @error="isFall = true">
     <slot />
   </v-img>
 </template>
@@ -11,6 +11,11 @@ export default {
     fallSrc: String.required,
   },
   name: 'FallbackImage',
+  watch: {
+    src() {
+      this.isFall = false;
+    },
+  },
   data() {
     return {
       isFall: false,
